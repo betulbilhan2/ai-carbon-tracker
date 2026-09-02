@@ -1,31 +1,9 @@
-# ============================================================
-# TerkenTech - Sıfır Atık Projesi - Python Bağımlılıkları
-# ============================================================
-# Bu dosya, projenin her notebook'unda AYNI kütüphane versiyonlarının
-# kullanılmasını sağlar. Hangi hesapla/oturumla çalışırsanız çalışın,
-# aşağıdaki komutla ortam her seferinde birebir aynı kurulur:
-#
-#   pip install -q -r requirements.txt
-#
-# Versiyon numaraları bilerek sabitlendi (== ile). Zamanla kütüphaneler
-# güncellenip davranış değiştirebiliyor; sabit versiyon, "bende çalışıyordu
-# ama sende çalışmıyor" sorununu önler.
-
-# --- Veri işleme ---
 pandas==2.2.2
 numpy==1.26.4
-pyarrow==16.1.0          # parquet dosya formatını okuma/yazma için (Drive'da .parquet kullanıyoruz)
-
-# --- Klasik makine öğrenmesi ---
-scikit-learn==1.5.0      # Random Forest baseline, K-Means, StandardScaler, encoding araçları
-
-# --- TabNet (derin öğrenme tabanlı tablo modeli) ---
-torch==2.3.1             # TabNet'in alt yapısı (PyTorch)
+pyarrow==16.1.0
+scikit-learn==1.5.0
+torch==2.3.1
 pytorch-tabnet==4.1.0
-
-# --- Görselleştirme (EDA ve metrik grafikleri için) ---
 matplotlib==3.8.4
 seaborn==0.13.2
-
-# --- Deney takibi ---
-joblib==1.4.2            # model/scaler nesnelerini .pkl olarak kaydetmek için
+joblib==1.4.2
