@@ -1,1 +1,143 @@
-
+{
+    "carbon_emission_period": "annual (varsayım, doğrulandı - ortalama ~2200-4000 kg seviyesinde)",
+    "recycling_encoding": "Bitmask (0-15 arası 4 bileşenli toplam - doğrulandı)",
+    "cooking_with_encoding": "Bitmask (0-15 arası enerji yoğun yöntemler - doğrulandı)",
+    "features": [
+        "Body Type",
+        "Sex",
+        "Diet",
+        "How Often Shower",
+        "Heating Energy Source",
+        "Transport",
+        "Vehicle Type",
+        "Social Activity",
+        "Monthly Grocery Bill",
+        "Frequency of Traveling by Air",
+        "Vehicle Monthly Distance Km",
+        "Waste Bag Size",
+        "Waste Bag Weekly Count",
+        "How Long TV PC Daily Hour",
+        "How Many New Clothes Monthly",
+        "How Long Internet Daily Hour",
+        "Energy efficiency",
+        "Recycling",
+        "Cooking_With",
+        "CarbonEmission"
+    ],
+    "categorical_mapping": {
+        "diet": {
+            "omnivore": 0,
+            "pescatarian": 1,
+            "vegetarian": 2,
+            "vegan": 3
+        },
+        "how_often_shower": {
+            "daily": 0,
+            "twice_a_day": 1,
+            "less_frequently": 2
+        },
+        "heating_energy_source": {
+            "coal": 0,
+            "natural_gas": 1,
+            "wood": 2,
+            "electricity": 3
+        },
+        "transport": {
+            "public": 0,
+            "private": 1,
+            "walk_bicycle": 2
+        },
+        "vehicle_type": {
+            "none": 0,
+            "petrol": 1,
+            "diesel": 2,
+            "hybrid": 3,
+            "electric": 4,
+            "lpg": 5
+        },
+        "social_activity": {
+            "often": 0,
+            "sometimes": 1,
+            "never": 2
+        },
+        "frequency_of_traveling_by_air": {
+            "never": 0,
+            "rarely": 1,
+            "frequently": 2,
+            "very_frequently": 3
+        },
+        "waste_bag_size": {
+            "small": 0,
+            "medium": 1,
+            "large": 2,
+            "extra_large": 3
+        },
+        "energy_efficiency": {
+            "low": 0,
+            "medium": 1,
+            "high": 2
+        },
+        "recycling": {
+            "description": "Bitmask (4-bit). Mobil 'true/false' gönderir, pipeline toplayıp tek integer yapar.",
+            "paper": 1,
+            "plastic": 2,
+            "glass": 4,
+            "metal": 8
+        }
+    },
+    "model_features": [
+        "Monthly Grocery Bill",
+        "Vehicle Monthly Distance Km",
+        "Waste Bag Weekly Count",
+        "How Long TV PC Daily Hour",
+        "How Many New Clothes Monthly",
+        "How Long Internet Daily Hour",
+        "Diet",
+        "How Often Shower",
+        "Heating Energy Source",
+        "Transport",
+        "Vehicle Type",
+        "Social Activity",
+        "Frequency of Traveling by Air",
+        "Waste Bag Size",
+        "Energy efficiency",
+        "Recycling",
+        "Cooking_With"
+    ],
+    "numerical_columns": [
+        "Monthly Grocery Bill",
+        "Vehicle Monthly Distance Km",
+        "Waste Bag Weekly Count",
+        "How Long TV PC Daily Hour",
+        "How Many New Clothes Monthly",
+        "How Long Internet Daily Hour"
+    ],
+    "categorical_columns": [
+        "Diet",
+        "How Often Shower",
+        "Heating Energy Source",
+        "Transport",
+        "Vehicle Type",
+        "Social Activity",
+        "Frequency of Traveling by Air",
+        "Waste Bag Size",
+        "Energy efficiency",
+        "Recycling",
+        "Cooking_With"
+    ],
+    "categorical_dims": {
+        "Diet": 4,
+        "How Often Shower": 4,
+        "Heating Energy Source": 4,
+        "Transport": 3,
+        "Vehicle Type": 6,
+        "Social Activity": 3,
+        "Frequency of Traveling by Air": 4,
+        "Waste Bag Size": 4,
+        "Energy efficiency": 3,
+        "Recycling": 16,
+        "Cooking_With": 16
+    },
+    "target_column": "CarbonEmission",
+    "scaler_path": "/content/drive/MyDrive/terkentech/02_models/tabnet/standard_scaler.pkl"
+}
