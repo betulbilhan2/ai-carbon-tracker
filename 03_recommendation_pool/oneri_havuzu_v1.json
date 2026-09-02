@@ -1,1 +1,1217 @@
-
+[
+    {
+        "id": 1,
+        "kategori": "🍳 Pişirme Alışkanlıkları",
+        "hedef_sutun": "Cooking_With",
+        "kosul": "kucuk",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Sınırlı sayıda pişirme yöntemi kullanıyor olman, genelde daha az enerji yoğun cihaza (fırın/mangal gibi) bağımlı olduğun anlamına gelebilir."
+    },
+    {
+        "id": 2,
+        "kategori": "🍳 Pişirme Alışkanlıkları",
+        "hedef_sutun": "Cooking_With",
+        "kosul": "buyuk",
+        "sinir_deger": 4,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Küçük porsiyonlar için fırın yerine mikrodalga ya da ocak kullanmak, aynı öğünü daha az enerjiyle pişirmeni sağlayabilir."
+    },
+    {
+        "id": 3,
+        "kategori": "🍳 Pişirme Alışkanlıkları",
+        "hedef_sutun": "Cooking_With",
+        "kosul": "buyuk",
+        "sinir_deger": 7,
+        "simulasyon_hedefi": 5,
+        "mesaj": "Birden fazla pişirme yöntemini sık kullanıyorsun; fırını önceden ısıtma süresini kısaltmak veya birkaç yemeği aynı anda pişirmek enerji tasarrufu sağlar."
+    },
+    {
+        "id": 4,
+        "kategori": "🍳 Pişirme Alışkanlıkları",
+        "hedef_sutun": "Cooking_With",
+        "kosul": "buyuk",
+        "sinir_deger": 11,
+        "simulasyon_hedefi": 7,
+        "mesaj": "Kullandığın pişirme yöntemi çeşitliliği yüksek; enerji verimli (A sınıfı) fırın/ocak modellerine geçiş bu yoğun kullanımda etkili olabilir."
+    },
+    {
+        "id": 5,
+        "kategori": "🍳 Pişirme Alışkanlıkları",
+        "hedef_sutun": "Cooking_With",
+        "kosul": "buyuk",
+        "sinir_deger": 14,
+        "simulasyon_hedefi": 8,
+        "mesaj": "Neredeyse tüm pişirme yöntemlerini düzenli kullanıyorsun; kapaklı tencere kullanmak gibi küçük teknikler pişirme süresini ve enerjiyi azaltabilir."
+    },
+    {
+        "id": 6,
+        "kategori": "🥦 Beslenme",
+        "hedef_sutun": "Diet",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Kırmızı et tüketimini kümes hayvanları veya baklagillerle kısmen değiştirmek, aynı doyuruculukta daha düşük emisyonlu bir seçenek sunar."
+    },
+    {
+        "id": 7,
+        "kategori": "🥦 Beslenme",
+        "hedef_sutun": "Diet",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Deniz ürünü tüketimini sürdürülebilir kaynaklı seçeneklerle sınırlamak, mevcut beslenme düzenini daha da düşük etkili hale getirebilir."
+    },
+    {
+        "id": 8,
+        "kategori": "🥦 Beslenme",
+        "hedef_sutun": "Diet",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Haftada birkaç öğünü tamamen bitkisel bazlı yapmayı denemek, mevcut vejetaryen düzeninden bir adım daha ileri gitmeni sağlar."
+    },
+    {
+        "id": 9,
+        "kategori": "🥦 Beslenme",
+        "hedef_sutun": "Diet",
+        "kosul": "esittir",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Bitkisel bazlı beslenme düzenin, beslenme kaynaklı karbon izini zaten en düşük seviyeye taşımış durumda — bu tercihini sürdürmen değerli."
+    },
+    {
+        "id": 10,
+        "kategori": "💡 Enerji Verimliliği",
+        "hedef_sutun": "Energy efficiency",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Evindeki cihazların enerji verimliliği düşük görünüyor; kullanmadığın cihazları fişten çekmek ve enerji tasarruflu ampullere geçmek hızlı ve etkili adımlar."
+    },
+    {
+        "id": 11,
+        "kategori": "💡 Enerji Verimliliği",
+        "hedef_sutun": "Energy efficiency",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Orta düzey enerji verimliliğin bir sonraki adımı, eski cihazları kademeli olarak A+++ sınıfı modellerle değiştirmek olabilir."
+    },
+    {
+        "id": 12,
+        "kategori": "💡 Enerji Verimliliği",
+        "hedef_sutun": "Energy efficiency",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Yüksek enerji verimliliğine sahip cihazlar kullanman, ev enerji tüketimini zaten en düşük seviyeye taşımış durumda — bu tercihini sürdürmen değerli."
+    },
+    {
+        "id": 13,
+        "kategori": "✈️ Hava Yolculuğu",
+        "hedef_sutun": "Frequency of Traveling by Air",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Hiç uçakla seyahat etmiyor olman, karbon ayak izinin en büyük tekil kaynaklarından birinden kaçınıyorsun demek — bu alışkanlığını koru."
+    },
+    {
+        "id": 14,
+        "kategori": "✈️ Hava Yolculuğu",
+        "hedef_sutun": "Frequency of Traveling by Air",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Mümkün olan kısa mesafeli seyahatlerde uçak yerine tren/otobüs gibi alternatifleri değerlendirmek yılda birkaç uçuşunun etkisini azaltabilir."
+    },
+    {
+        "id": 15,
+        "kategori": "✈️ Hava Yolculuğu",
+        "hedef_sutun": "Frequency of Traveling by Air",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Sık uçuş yapıyor olman, karbon izinin büyük bölümünü oluşturuyor olabilir; birden fazla kısa seyahati tek bir uzun seyahatte birleştirmek uçuş sayısını azaltır."
+    },
+    {
+        "id": 16,
+        "kategori": "✈️ Hava Yolculuğu",
+        "hedef_sutun": "Frequency of Traveling by Air",
+        "kosul": "esittir",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Bu sıklıkta bir seyahat düzeninde, doğrudan uçuşları tercih etmek (aktarmalı uçuşlara kıyasla) kişi başı emisyonu azaltan pratik bir seçim olabilir."
+    },
+    {
+        "id": 17,
+        "kategori": "🔥 Isınma",
+        "hedef_sutun": "Heating Energy Source",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Isınma kaynağın yüksek emisyonlu bir kategoride görünüyor; mümkünse daha temiz bir kaynağa geçişi veya en azından yalıtım iyileştirmesini değerlendirebilirsin."
+    },
+    {
+        "id": 18,
+        "kategori": "🔥 Isınma",
+        "hedef_sutun": "Heating Energy Source",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Termostatı 1-2 derece düşürmek ve kapı/pencere yalıtımını kontrol etmek, doğalgaz tüketimini gözle görülür şekilde azaltabilir."
+    },
+    {
+        "id": 19,
+        "kategori": "🔥 Isınma",
+        "hedef_sutun": "Heating Energy Source",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Elektrikle ısınıyor olman görece iyi bir başlangıç; mümkünse yenilenebilir enerji tarifesine geçmek bu avantajı daha da artırabilir."
+    },
+    {
+        "id": 20,
+        "kategori": "🔥 Isınma",
+        "hedef_sutun": "Heating Energy Source",
+        "kosul": "esittir",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Odun ile ısınma, verimli bir soba/baca sistemi kullanılmadığında yüksek emisyona yol açabilir; ev yalıtımını güçlendirmek yakıt ihtiyacını azaltır."
+    },
+    {
+        "id": 21,
+        "kategori": "🌐 İnternet Kullanımı",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "kucuk",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Günlük internet kullanım süren oldukça düşük; veri merkezi kaynaklı dolaylı emisyonun da bu sayede sınırlı kalıyor."
+    },
+    {
+        "id": 22,
+        "kategori": "🌐 İnternet Kullanımı",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Video görüşmelerinde ve yayın izlerken çözünürlüğü ihtiyaç kadar tutmak (ör. otomatik yerine standart kalite) veri/enerji tüketimini azaltır."
+    },
+    {
+        "id": 23,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Günde 3 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 1 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 24,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 5,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Günde 5 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 3 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 25,
+        "kategori": "🌐 İnternet Kullanımı",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 6,
+        "simulasyon_hedefi": 4,
+        "mesaj": "Kullanılmayan sekmeleri ve arka planda açık kalan uygulamaları kapatmak, cihazının ve ağın gereksiz enerji harcamasını önler."
+    },
+    {
+        "id": 26,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 8,
+        "simulasyon_hedefi": 6,
+        "mesaj": "Günde 8 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 6 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 27,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 9,
+        "simulasyon_hedefi": 7,
+        "mesaj": "Günde 9 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 7 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 28,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 10,
+        "simulasyon_hedefi": 8,
+        "mesaj": "Günde 10 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 8 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 29,
+        "kategori": "🌐 İnternet Kullanımı",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 12,
+        "simulasyon_hedefi": 8,
+        "mesaj": "Gün içinde belirli saatleri bildirim ve ekran kontrolüne değil, çevrimdışı işlere ayırmak toplam internet süreni dengeleyebilir."
+    },
+    {
+        "id": 30,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 13,
+        "simulasyon_hedefi": 11,
+        "mesaj": "Günde 13 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 11 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 31,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 15,
+        "simulasyon_hedefi": 13,
+        "mesaj": "Günde 15 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 13 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 32,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 16,
+        "simulasyon_hedefi": 14,
+        "mesaj": "Günde 16 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 14 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 33,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 17,
+        "simulasyon_hedefi": 15,
+        "mesaj": "Günde 17 saat internet kullanımı devasa veri merkezlerinde karbon üretir. 15 saate düşürmek sana ve doğaya iyi gelir."
+    },
+    {
+        "id": 34,
+        "kategori": "🌐 İnternet Kullanımı",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 21,
+        "simulasyon_hedefi": 15,
+        "mesaj": "Bu yoğunlukta bir kullanımda, otomatik bulut yedeklemeyi gece yerine gündüz düşük-yoğunluklu saatlere planlamak enerji verimliliğine katkı sağlar."
+    },
+    {
+        "id": 35,
+        "kategori": "🌐 İnternet Kullanımı",
+        "hedef_sutun": "How Long Internet Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 22,
+        "simulasyon_hedefi": 18,
+        "mesaj": "İnternet kullanım süren veri setinin en üst dilimlerinde; günlük ekran-dışı molalar planlamak hem farkındalığı hem enerji tasarrufunu artırır."
+    },
+    {
+        "id": 36,
+        "kategori": "💻 Ekran Süresi",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "kucuk",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Günlük TV/PC süren zaten oldukça sınırlı — bu da düşük enerji tüketimi anlamına geliyor, harika bir alışkanlık."
+    },
+    {
+        "id": 37,
+        "kategori": "💻 Ekran Süresi",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Kullanmadığın anlarda ekranı beklemede bırakmak yerine tamamen kapatmak küçük ama sürekli bir tasarruf sağlar."
+    },
+    {
+        "id": 38,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Günde 3 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 1 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 39,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 5,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Günde 5 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 3 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 40,
+        "kategori": "💻 Ekran Süresi",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 6,
+        "simulasyon_hedefi": 4,
+        "mesaj": "Ekran parlaklığını düşürmek ve enerji tasarrufu modunu aktif etmek, günlük kullanımın uzun olduğu durumlarda tüketimi azaltır."
+    },
+    {
+        "id": 41,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 8,
+        "simulasyon_hedefi": 6,
+        "mesaj": "Günde 8 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 6 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 42,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 9,
+        "simulasyon_hedefi": 7,
+        "mesaj": "Günde 9 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 7 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 43,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 10,
+        "simulasyon_hedefi": 8,
+        "mesaj": "Günde 10 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 8 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 44,
+        "kategori": "💻 Ekran Süresi",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 12,
+        "simulasyon_hedefi": 8,
+        "mesaj": "Günün bir bölümünü ekransız aktivitelere (yürüyüş, kitap, sohbet) ayırmak hem enerji tüketimini hem ekran süresini dengeler."
+    },
+    {
+        "id": 45,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 13,
+        "simulasyon_hedefi": 11,
+        "mesaj": "Günde 13 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 11 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 46,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 15,
+        "simulasyon_hedefi": 13,
+        "mesaj": "Günde 15 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 13 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 47,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 16,
+        "simulasyon_hedefi": 14,
+        "mesaj": "Günde 16 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 14 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 48,
+        "kategori": "💻 Dijital İyileşme",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 17,
+        "simulasyon_hedefi": 15,
+        "mesaj": "Günde 17 saat ekran süresi, yüksek elektrik (fosil yakıt) tüketimi demek. Ekran süreni 15 saate düşürmeyi hedefleyebilirsin."
+    },
+    {
+        "id": 49,
+        "kategori": "💻 Ekran Süresi",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 21,
+        "simulasyon_hedefi": 15,
+        "mesaj": "Ekran başında geçirdiğin süre veri setinin üst dilimlerinde; günlük ekran-mola alarmları kurmak farkındalığını artırabilir."
+    },
+    {
+        "id": 50,
+        "kategori": "💻 Ekran Süresi",
+        "hedef_sutun": "How Long TV PC Daily Hour",
+        "kosul": "buyuk",
+        "sinir_deger": 22,
+        "simulasyon_hedefi": 18,
+        "mesaj": "Bu denli yoğun bir ekran kullanımında enerji verimli (LED/A+++ sınıfı) cihazlara geçiş, tüketimi düşürmede en somut adım olabilir."
+    },
+    {
+        "id": 51,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Ayda 2 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 0 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 52,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Ayda 3 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 1 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 53,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 4,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Ayda 4 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 2 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 54,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 6,
+        "simulasyon_hedefi": 4,
+        "mesaj": "Ayda 6 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 4 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 55,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 7,
+        "simulasyon_hedefi": 5,
+        "mesaj": "Ayda 7 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 5 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 56,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 9,
+        "simulasyon_hedefi": 7,
+        "mesaj": "Ayda 9 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 7 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 57,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 11,
+        "simulasyon_hedefi": 9,
+        "mesaj": "Ayda 11 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 9 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 58,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 13,
+        "simulasyon_hedefi": 11,
+        "mesaj": "Ayda 13 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 11 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 59,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 14,
+        "simulasyon_hedefi": 12,
+        "mesaj": "Ayda 14 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 12 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 60,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 16,
+        "simulasyon_hedefi": 14,
+        "mesaj": "Ayda 16 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 14 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 61,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 18,
+        "simulasyon_hedefi": 16,
+        "mesaj": "Ayda 18 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 16 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 62,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 20,
+        "simulasyon_hedefi": 18,
+        "mesaj": "Ayda 20 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 18 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 63,
+        "kategori": "👗 Tüketim",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 21,
+        "simulasyon_hedefi": 19,
+        "mesaj": "Ayda 21 yeni kıyafet tekstil atığını ciddi şekilde artırıyor. Bunu 19 adede düşürmek sürdürülebilirlik için kritik bir adımdır."
+    },
+    {
+        "id": 64,
+        "kategori": "👕 Tekstil Tüketimi",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 37,
+        "simulasyon_hedefi": 25,
+        "mesaj": "Aylık kıyafet alımın ortalamanın belirgin üzerinde; kapsül gardırop yaklaşımı gereksiz alımları azaltmada etkili bir yöntem olabilir."
+    },
+    {
+        "id": 65,
+        "kategori": "👕 Tekstil Tüketimi",
+        "hedef_sutun": "How Many New Clothes Monthly",
+        "kosul": "buyuk",
+        "sinir_deger": 47,
+        "simulasyon_hedefi": 35,
+        "mesaj": "Aylık kıyafet alımın veri setindeki en yüksek dilimde; eskiyen kıyafetleri tamir/dönüştürme (upcycling) ile yeniden kullanmayı deneyebilirsin."
+    },
+    {
+        "id": 66,
+        "kategori": "🚿 Su & Enerji Kullanımı",
+        "hedef_sutun": "How Often Shower",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Duş sıklığın zaten düşük bir kategoride; bu alışkanlık su ısıtma kaynaklı enerji tüketimini de sınırlı tutuyor."
+    },
+    {
+        "id": 67,
+        "kategori": "🚿 Su & Enerji Kullanımı",
+        "hedef_sutun": "How Often Shower",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Duş süreni birkaç dakika kısaltmak, mevcut sıklığını korurken su ısıtma kaynaklı enerji tüketimini azaltabilir."
+    },
+    {
+        "id": 68,
+        "kategori": "🚿 Su & Enerji Kullanımı",
+        "hedef_sutun": "How Often Shower",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Düşük akışlı duş başlığına geçmek, duş sıklığını değiştirmeden su ve enerji tüketimini önemli ölçüde azaltabilir."
+    },
+    {
+        "id": 69,
+        "kategori": "🚿 Su & Enerji Kullanımı",
+        "hedef_sutun": "How Often Shower",
+        "kosul": "esittir",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Günde birkaç kez duş alma sıklığın en üst kategoride; duş süresini kısaltmak ve suyu ısıtırken termostatı ölçülü tutmak enerji tüketimini dengeler."
+    },
+    {
+        "id": 70,
+        "kategori": "🛒 Tüketim",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "kucuk",
+        "sinir_deger": 65,
+        "simulasyon_hedefi": 60,
+        "mesaj": "Aylık market harcaman oldukça düşük seviyede; bu da genelde daha az işlenmiş/ambalajlı ürün tüketimine işaret ediyor — güzel gidiyor."
+    },
+    {
+        "id": 71,
+        "kategori": "🛒 Tüketim",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 80,
+        "simulasyon_hedefi": 70,
+        "mesaj": "Haftalık alışveriş listesi hazırlamak, gereksiz/plansız alımları azaltarak hem bütçeni hem karbon izini küçültür."
+    },
+    {
+        "id": 72,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 150,
+        "simulasyon_hedefi": 100,
+        "mesaj": "Aylık 150 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 100 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 73,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 175,
+        "simulasyon_hedefi": 125,
+        "mesaj": "Aylık 175 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 125 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 74,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 225,
+        "simulasyon_hedefi": 175,
+        "mesaj": "Aylık 225 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 175 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 75,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 250,
+        "simulasyon_hedefi": 200,
+        "mesaj": "Aylık 250 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 200 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 76,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 275,
+        "simulasyon_hedefi": 225,
+        "mesaj": "Aylık 275 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 225 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 77,
+        "kategori": "🛒 Tüketim",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 295,
+        "simulasyon_hedefi": 270,
+        "mesaj": "Bu seviyede bir harcamada, ay başında bütçe ve menü planı yapmak hem gereksiz alımları hem de gıda israfını gözle görülür şekilde azaltır."
+    },
+    {
+        "id": 78,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 325,
+        "simulasyon_hedefi": 275,
+        "mesaj": "Aylık 325 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 275 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 79,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 375,
+        "simulasyon_hedefi": 325,
+        "mesaj": "Aylık 375 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 325 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 80,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 425,
+        "simulasyon_hedefi": 375,
+        "mesaj": "Aylık 425 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 375 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 81,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 475,
+        "simulasyon_hedefi": 425,
+        "mesaj": "Aylık 475 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 425 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 82,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 525,
+        "simulasyon_hedefi": 475,
+        "mesaj": "Aylık 525 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 475 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 83,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 575,
+        "simulasyon_hedefi": 525,
+        "mesaj": "Aylık 575 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 525 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 84,
+        "kategori": "🥩 Alışveriş",
+        "hedef_sutun": "Monthly Grocery Bill",
+        "kosul": "buyuk",
+        "sinir_deger": 625,
+        "simulasyon_hedefi": 575,
+        "mesaj": "Aylık 625 birim mutfak masrafı gıda israfı riski taşıyor. Akıllı alışverişle bütçeni 575 birime düşürerek karbon ayak izini azaltabilirsin."
+    },
+    {
+        "id": 85,
+        "kategori": "♻️ Geri Dönüşüm",
+        "hedef_sutun": "Recycling",
+        "kosul": "buyuk",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 8,
+        "mesaj": "Ayrıştırdığın malzeme türlerine bir yenisini daha eklemek (örneğin cam ya da metal) geri dönüşüm oranını hızla artırabilir."
+    },
+    {
+        "id": 86,
+        "kategori": "♻️ Geri Dönüşüm",
+        "hedef_sutun": "Recycling",
+        "kosul": "kucuk",
+        "sinir_deger": 4,
+        "simulasyon_hedefi": 8,
+        "mesaj": "Şu an geri dönüştürdüğün malzeme türü sayısı oldukça az görünüyor; mutfağa küçük bir ayrıştırma kutusu eklemek başlamak için kolay bir adım."
+    },
+    {
+        "id": 87,
+        "kategori": "♻️ Geri Dönüşüm",
+        "hedef_sutun": "Recycling",
+        "kosul": "buyuk",
+        "sinir_deger": 7,
+        "simulasyon_hedefi": 12,
+        "mesaj": "Birden fazla malzeme türünü zaten ayrıştırıyorsun; eksik kalan son kategoriyi de eklersen neredeyse tam kapsamlı bir geri dönüşüm rutinine ulaşırsın."
+    },
+    {
+        "id": 88,
+        "kategori": "♻️ Geri Dönüşüm",
+        "hedef_sutun": "Recycling",
+        "kosul": "buyuk",
+        "sinir_deger": 11,
+        "simulasyon_hedefi": 14,
+        "mesaj": "Neredeyse tüm malzeme türlerini ayrıştırıyorsun; komşularını/aileni de bu rutine dahil ederek etkini genişletebilirsin."
+    },
+    {
+        "id": 89,
+        "kategori": "♻️ Geri Dönüşüm",
+        "hedef_sutun": "Recycling",
+        "kosul": "esittir",
+        "sinir_deger": 15,
+        "simulasyon_hedefi": 15,
+        "mesaj": "Kağıt, plastik, cam ve metal — dört malzeme türünü de ayrıştırıyor olman harika; bu rutini sürdürmen en güçlü alışkanlıklarından biri."
+    },
+    {
+        "id": 90,
+        "kategori": "🎉 Sosyal Aktivite",
+        "hedef_sutun": "Social Activity",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Sosyal aktivite sıklığın düşük seviyede; dışarı çıktığında toplu taşıma veya yürüyüşü tercih etmek bu düşük etkiyi korumana yardımcı olur."
+    },
+    {
+        "id": 91,
+        "kategori": "🎉 Sosyal Aktivite",
+        "hedef_sutun": "Social Activity",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Buluşmalarını yakın çevrende, yürüme mesafesindeki mekanlarda planlamak sosyal hayatını sürdürürken ulaşım kaynaklı emisyonu azaltır."
+    },
+    {
+        "id": 92,
+        "kategori": "🎉 Sosyal Aktivite",
+        "hedef_sutun": "Social Activity",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Sık sosyalleştiğin günlerde arkadaşlarınla araç paylaşımı yapmak veya toplu taşımayla buluşmak, yoğun sosyal temponun ulaşım etkisini azaltabilir."
+    },
+    {
+        "id": 93,
+        "kategori": "🚌 Ulaşım Tercihi",
+        "hedef_sutun": "Transport",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Haftada bir-iki gün özel araç yerine toplu taşımayı denemek, ulaşım kaynaklı emisyonunu belirgin şekilde azaltabilir."
+    },
+    {
+        "id": 94,
+        "kategori": "🚌 Ulaşım Tercihi",
+        "hedef_sutun": "Transport",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Toplu taşımayı zaten kullanıyorsun; kısa mesafeli aktarma noktalarında yürüyüşü tercih etmek etkini bir adım daha artırır."
+    },
+    {
+        "id": 95,
+        "kategori": "🚌 Ulaşım Tercihi",
+        "hedef_sutun": "Transport",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Yürüyüş veya bisikleti ana ulaşım biçimi olarak kullanman, ulaşım kaynaklı karbon izini neredeyse en aza indiriyor — harika bir tercih."
+    },
+    {
+        "id": 96,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 100,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Aylık 100 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 0 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 97,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 200,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Aylık 200 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 0 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 98,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 400,
+        "simulasyon_hedefi": 100,
+        "mesaj": "Aylık 400 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 100 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 99,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 600,
+        "simulasyon_hedefi": 300,
+        "mesaj": "Aylık 600 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 300 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 100,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 900,
+        "simulasyon_hedefi": 600,
+        "mesaj": "Aylık 900 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 600 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 101,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 1100,
+        "simulasyon_hedefi": 800,
+        "mesaj": "Aylık 1100 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 800 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 102,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 1300,
+        "simulasyon_hedefi": 1000,
+        "mesaj": "Aylık 1300 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 1000 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 103,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 1500,
+        "simulasyon_hedefi": 900,
+        "mesaj": "Sık tekrarlayan güzergahlarını (iş, okul, alışveriş) birleştirerek tek seferde halletmek gereksiz kilometreleri azaltır."
+    },
+    {
+        "id": 104,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 1800,
+        "simulasyon_hedefi": 1500,
+        "mesaj": "Aylık 1800 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 1500 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 105,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 2000,
+        "simulasyon_hedefi": 1700,
+        "mesaj": "Aylık 2000 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 1700 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 106,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 2200,
+        "simulasyon_hedefi": 1900,
+        "mesaj": "Aylık 2200 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 1900 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 107,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 2400,
+        "simulasyon_hedefi": 2100,
+        "mesaj": "Aylık 2400 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 2100 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 108,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 2700,
+        "simulasyon_hedefi": 2400,
+        "mesaj": "Aylık 2700 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 2400 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 109,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 2900,
+        "simulasyon_hedefi": 2600,
+        "mesaj": "Aylık 2900 km araç kullanımı çok yüksek. İşe giderken araç paylaşımı veya toplu taşıma kullanarak mesafeni 2600 km seviyesine çekebilirsin."
+    },
+    {
+        "id": 110,
+        "kategori": "🚗 Ulaşım",
+        "hedef_sutun": "Vehicle Monthly Distance Km",
+        "kosul": "buyuk",
+        "sinir_deger": 3600,
+        "simulasyon_hedefi": 2200,
+        "mesaj": "Aylık kat ettiğin mesafe ortalamanın oldukça üzerinde; haftalık en az 2 gün alternatif ulaşım denemek büyük fark yaratır."
+    },
+    {
+        "id": 111,
+        "kategori": "🚙 Araç Tipi",
+        "hedef_sutun": "Vehicle Type",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Araç sahibi olmaman, ulaşım kaynaklı emisyonunu doğrudan en düşük seviyede tutuyor; bu avantajı destekleyecek toplu taşıma/bisiklet alışkanlıklarını sürdürebilirsin."
+    },
+    {
+        "id": 112,
+        "kategori": "🚙 Araç Tipi",
+        "hedef_sutun": "Vehicle Type",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Düzenli lastik basıncı kontrolü ve bakım, benzinli araçlarda yakıt verimliliğini artırarak emisyonu azaltan basit ama etkili bir adımdır."
+    },
+    {
+        "id": 113,
+        "kategori": "🚙 Araç Tipi",
+        "hedef_sutun": "Vehicle Type",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Uzun vadeli bir plan olarak dizel aracını hibrit veya elektrikli bir modelle değiştirmeyi değerlendirmek en büyük etkiyi yaratacak adımdır."
+    },
+    {
+        "id": 114,
+        "kategori": "🚙 Araç Tipi",
+        "hedef_sutun": "Vehicle Type",
+        "kosul": "esittir",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 5,
+        "mesaj": "Hibrit aracın zaten düşük emisyonlu bir seçenek; şehir içi kısa mesafelerde elektrikli modu önceliklendirmek etkini daha da artırabilir."
+    },
+    {
+        "id": 115,
+        "kategori": "🚙 Araç Tipi",
+        "hedef_sutun": "Vehicle Type",
+        "kosul": "esittir",
+        "sinir_deger": 4,
+        "simulasyon_hedefi": 5,
+        "mesaj": "LPG'li aracın benzin/dizele kıyasla daha düşük emisyonlu; düzenli bakım ile bu avantajı koruyabilirsin."
+    },
+    {
+        "id": 116,
+        "kategori": "🚙 Araç Tipi",
+        "hedef_sutun": "Vehicle Type",
+        "kosul": "esittir",
+        "sinir_deger": 5,
+        "simulasyon_hedefi": 5,
+        "mesaj": "Elektrikli araç kullanman, ulaşım kaynaklı emisyonunu zaten en düşük seviyeye taşımış durumda; şarjını mümkünse yenilenebilir kaynaklı tarifelerle yapmak etkini pekiştirir."
+    },
+    {
+        "id": 117,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Size",
+        "kosul": "esittir",
+        "sinir_deger": 0,
+        "simulasyon_hedefi": 0,
+        "mesaj": "En küçük çöp poşeti boyutunu kullanıyor olman, atık hacmini doğal olarak sınırlı tutuyor; bu alışkanlığı sürdürebilirsin."
+    },
+    {
+        "id": 118,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Size",
+        "kosul": "esittir",
+        "sinir_deger": 1,
+        "simulasyon_hedefi": 0,
+        "mesaj": "Orta boy poşet kullanıyor olman normal bir düzeyde; ambalajı azaltılmış ürünleri tercih etmek bir sonraki adım olarak boyutu küçültmene yardımcı olabilir."
+    },
+    {
+        "id": 119,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Size",
+        "kosul": "esittir",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Büyük boy poşet kullanman yüksek atık hacmine işaret edebilir; organik atıkları ayrı toplamak (kompost) genel hacmi azaltabilir."
+    },
+    {
+        "id": 120,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Size",
+        "kosul": "esittir",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 1,
+        "mesaj": "En büyük poşet boyutunu kullanıyor olman veri setindeki en yüksek atık hacmi kategorisine işaret ediyor; tek kullanımlık ürünleri azaltmak ilk somut adım olabilir."
+    },
+    {
+        "id": 121,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Haftada 2 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 1 poşete indirmelisin."
+    },
+    {
+        "id": 122,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "kucuk",
+        "sinir_deger": 2,
+        "simulasyon_hedefi": 1,
+        "mesaj": "Haftalık çıkardığın çöp poşeti sayısı zaten düşük; bu da genel tüketim ve israf alışkanlıklarının kontrollü olduğunu gösteriyor."
+    },
+    {
+        "id": 123,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 3,
+        "simulasyon_hedefi": 2,
+        "mesaj": "Organik atıkları kompost yapmayı denemek, çöp poşeti sayısını azaltmanın en doğrudan yollarından biri."
+    },
+    {
+        "id": 124,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 5,
+        "simulasyon_hedefi": 3,
+        "mesaj": "Tek kullanımlık ambalajlı ürünler yerine yeniden doldurulabilir/dökme alternatifleri tercih etmek haftalık atık miktarını azaltır."
+    },
+    {
+        "id": 125,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 6,
+        "simulasyon_hedefi": 5,
+        "mesaj": "Bu seviyede bir atık üretiminde, alışveriş öncesi ambalaj miktarını göz önünde bulundurmak (az ambalajlı ürün seçimi) belirgin fark yaratabilir."
+    },
+    {
+        "id": 126,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 8,
+        "simulasyon_hedefi": 6,
+        "mesaj": "Haftada 8 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 6 poşete indirmelisin."
+    },
+    {
+        "id": 127,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 9,
+        "simulasyon_hedefi": 7,
+        "mesaj": "Haftada 9 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 7 poşete indirmelisin."
+    },
+    {
+        "id": 128,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 10,
+        "simulasyon_hedefi": 8,
+        "mesaj": "Haftada 10 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 8 poşete indirmelisin."
+    },
+    {
+        "id": 129,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 12,
+        "simulasyon_hedefi": 10,
+        "mesaj": "Haftada 12 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 10 poşete indirmelisin."
+    },
+    {
+        "id": 130,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 13,
+        "simulasyon_hedefi": 11,
+        "mesaj": "Haftada 13 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 11 poşete indirmelisin."
+    },
+    {
+        "id": 131,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 15,
+        "simulasyon_hedefi": 13,
+        "mesaj": "Haftada 15 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 13 poşete indirmelisin."
+    },
+    {
+        "id": 132,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 16,
+        "simulasyon_hedefi": 14,
+        "mesaj": "Haftada 16 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 14 poşete indirmelisin."
+    },
+    {
+        "id": 133,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 17,
+        "simulasyon_hedefi": 15,
+        "mesaj": "Haftada 17 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 15 poşete indirmelisin."
+    },
+    {
+        "id": 134,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 19,
+        "simulasyon_hedefi": 17,
+        "mesaj": "Haftada 19 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 17 poşete indirmelisin."
+    },
+    {
+        "id": 135,
+        "kategori": "🗑️ Atık Yönetimi",
+        "hedef_sutun": "Waste Bag Weekly Count",
+        "kosul": "buyuk",
+        "sinir_deger": 20,
+        "simulasyon_hedefi": 18,
+        "mesaj": "Haftada 20 poşetten fazla çöp üretiyorsun. Sürdürülebilir ambalajlar ve geri dönüşüm ile bunu 18 poşete indirmelisin."
+    }
+]
