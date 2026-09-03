@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import CategoryTabs        from '../components/activity/CategoryTabs';
 import DynamicActivityForm from '../components/activity/DynamicActivityForm';
 import LiveEstimatePanel, { computeEmission } from '../components/activity/LiveEstimatePanel';
-import RecentLogsTable, { INITIAL_LOGS }      from '../components/activity/RecentLogsTable';
+import RecentLogsTable     from '../components/activity/RecentLogsTable';
 import {
   TRANSPORT_VEHICLES,
   ENERGY_TYPES,
@@ -10,8 +10,81 @@ import {
   WASTE_TYPES,
   nowDateTimeLocal,
 } from '../components/activity/activityConstants';
+import {
+  createActivity,
+  getRecentActivities,
+  getCategories,
+} from '../services/api';
 
-// ── Build a fresh empty form for a category ───────────────────────
+// ── Kategori adı → backend kategori_id map ────────────────────────
+// Frontend string ID'lerini backend integer kategori_id'ye çevirir.
+// activityConstants.js → leaderboardData.js seed datası ile eşleşir.
+const VEHICLE_ID_MAP = {
+  bus:        3,   // Ulaşım - Otobüs
+  metro:      2,   // Ulaşım - Metro
+  car:        1,   // Ulaşım - Araba
+  motorcycle: 4,   // Ulaşım - Motosiklet
+  bike:       5,   // Ulaşım - Bisiklet
+  plane:      6,   // Ulaşım - Uçak
+};
+
+const ENERGY_ID_MAP = {
+  electricity: 7,  // Enerji - Elektrik
+  naturalgas:  8,  // Enerji - Doğalgaz
+  coal:        9,  // Enerji - Kömür
+};
+
+const MEAL_ID_MAP = {
+  red_meat:   10,  // Beslenme - Kırmızı Et
+  white_meat: 11,  // Beslenme - Beyaz Et
+  vegetarian: 12,  // Beslenme - Vejetaryen
+  vegan:      13,  // Beslenme - Vegan
+};
+
+const WASTE_ID_MAP = {
+  plastic: 14,  // Atık - Plastik Şişe
+  paper:   15,  // Atık - Kağıt/Karton
+  glass:   16,  // Atık - Cam
+  organic: 17,  // Atık - Organik
+};
+
+// Formdaki seçimi backend kategori_id + tüketim değerine dönüştür
+function resolveBackendPayload(category, formData) {
+  if (category === 'transport') {
+    return {
+      kategoriId:    VEHICLE_ID_MAP[formData.vehicleId] ?? 1,
+      tuketimDegeri: Number(formData.distance) || 0,
+    };
+  }
+  if (category === 'energy') {
+    return {
+      kategoriId:    ENERGY_ID_MAP[formData.energyTypeId] ?? 7,
+      tuketimDegeri: Number(formData.amount) || 0,
+    };
+  }
+  if (category === 'food') {
+    return {
+      kategoriId:    MEAL_ID_MAP[formData.mealTypeId] ?? 12,
+      tuketimDegeri: Number(formData.portions) || 1,
+    };
+  }
+  if (category === 'waste') {
+    // Atık: en yüksek miktarlı kalemi birincil olarak gönder
+    const items = formData.wasteItems ?? {};
+    const entry = Object.entries(items)
+      .filter(([, v]) => Number(v) > 0)
+      .sort(([, a], [, b]) => Number(b) - Number(a))[0];
+
+    if (!entry) return { kategoriId: 14, tuketimDegeri: 0 };
+    return {
+      kategoriId:    WASTE_ID_MAP[entry[0]] ?? 14,
+      tuketimDegeri: Number(entry[1]),
+    };
+  }
+  return { kategoriId: 1, tuketimDegeri: 0 };
+}
+
+// ── Default boş form ─────────────────────────────────────────────
 function defaultForm() {
   return {
     vehicleId:    'car',
@@ -26,7 +99,7 @@ function defaultForm() {
   };
 }
 
-// ── Build detail label for log table ─────────────────────────────
+// ── Log satırı için özet metni ────────────────────────────────────
 function buildDetail(category, formData) {
   if (category === 'transport') {
     const v = TRANSPORT_VEHICLES.find(x => x.id === formData.vehicleId);
@@ -51,12 +124,12 @@ function buildDetail(category, formData) {
   return '';
 }
 
-// ── Success Toast ─────────────────────────────────────────────────
-function SuccessToast({ visible }) {
+// ── Toast Bileşeni ────────────────────────────────────────────────
+function SuccessToast({ visible, message }) {
   if (!visible) return null;
   return (
     <div
-      className="flex items-center gap-3 rounded-xl px-5 py-3 mb-6 text-sm font-medium transition-all"
+      className="flex items-center gap-3 rounded-xl px-5 py-3 mb-2 text-sm font-medium transition-all"
       style={{
         backgroundColor: 'rgba(34,197,94,0.12)',
         border: '1px solid rgba(34,197,94,0.3)',
@@ -64,22 +137,63 @@ function SuccessToast({ visible }) {
       }}
     >
       <span>✅</span>
-      <span>Aktivite başarıyla kaydedildi! Tablo ve KPI'lar güncellendi.</span>
+      <span>{message}</span>
     </div>
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────
-let nextId = 100;
+function ErrorToast({ visible, message }) {
+  if (!visible) return null;
+  return (
+    <div
+      className="flex items-center gap-3 rounded-xl px-5 py-3 mb-2 text-sm font-medium"
+      style={{
+        backgroundColor: 'rgba(239,68,68,0.10)',
+        border: '1px solid rgba(239,68,68,0.3)',
+        color: '#EF4444',
+      }}
+    >
+      <span>⚠️</span>
+      <span>{message}</span>
+    </div>
+  );
+}
 
+// ── Backend aktivite logunu tablo satırı formatına çevir ──────────
+let tempId = 9000;
+function backendLogToRow(item) {
+  return {
+    id:       item.aktiviteId ?? tempId++,
+    datetime: item.aktiviteTarihi
+                ? new Date(item.aktiviteTarihi).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })
+                : '—',
+    category: item.kategoriAdi ?? '—',
+    detail:   `${item.tuketimDegeri} ${item.birimTipi}`,
+    kg:       item.hesaplananKarbon ?? 0,
+  };
+}
+
+// ── Ana Sayfa ─────────────────────────────────────────────────────
 export default function ActivityPage({ onActivitySaved }) {
-  const [category, setCategory] = useState('transport');
-  const [formData, setFormData] = useState(defaultForm());
-  const [logs,     setLogs]     = useState(INITIAL_LOGS);
-  const [saving,   setSaving]   = useState(false);
-  const [toastOn,  setToastOn]  = useState(false);
+  const [category,  setCategory]  = useState('transport');
+  const [formData,  setFormData]  = useState(defaultForm());
+  const [logs,      setLogs]      = useState([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+  const [saving,    setSaving]    = useState(false);
+  const [toastOn,   setToastOn]   = useState(false);
+  const [toastMsg,  setToastMsg]  = useState('');
+  const [errorMsg,  setErrorMsg]  = useState('');
 
-  // Switch category → reset form but keep datetime/note
+  // ── İlk yüklemede son aktiviteleri backend'den çek ───────────────
+  useEffect(() => {
+    setLogsLoading(true);
+    getRecentActivities(1)
+      .then(data => setLogs((data ?? []).map(backendLogToRow)))
+      .catch(() => setLogs([]))   // API yoksa boş liste göster
+      .finally(() => setLogsLoading(false));
+  }, []);
+
+  // Kategori değişince formu sıfırla
   function handleCategoryChange(cat) {
     setCategory(cat);
     setFormData(prev => ({
@@ -89,47 +203,73 @@ export default function ActivityPage({ onActivitySaved }) {
     }));
   }
 
-  const handleSave = useCallback(() => {
+  // ── Kaydet: backend'e POST ────────────────────────────────────────
+  const handleSave = useCallback(async () => {
     const { kg } = computeEmission(category, formData);
     if (kg === 0) return;
 
-    setSaving(true);
+    const { kategoriId, tuketimDegeri } = resolveBackendPayload(category, formData);
 
-    // Simulate async DB write
-    setTimeout(() => {
+    setSaving(true);
+    setErrorMsg('');
+
+    try {
+      // Backend'e aktivite gönder
+      const result = await createActivity({
+        kullaniciId:    1,
+        kategoriId,
+        tuketimDegeri,
+        aktiviteTarihi: formData.datetime
+          ? new Date(formData.datetime).toISOString()
+          : new Date().toISOString(),
+        not: formData.note || null,
+      });
+
+      const karbonMiktari = result?.karbonMiktari ?? kg;
+
+      // Tablo için satır oluştur (backend yanıtından)
       const newLog = {
-        id:       nextId++,
-        datetime: formData.datetime,
-        category,
+        id:       result?.aktiviteId ?? tempId++,
+        datetime: new Date().toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }),
+        category: result?.kategoriAdi ?? buildDetail(category, formData),
         detail:   buildDetail(category, formData),
-        kg,
+        kg:       karbonMiktari,
       };
 
       setLogs(prev => [newLog, ...prev]);
       setFormData(defaultForm());
-      setSaving(false);
+
+      // Başarılı toast: hesaplanan karbon bilgisi dahil
+      const toastText = `✅ ${result?.kategoriAdi ?? 'Aktivite'} kaydedildi! Hesaplanan: ${karbonMiktari.toFixed(2)} kg CO₂e`;
+      setToastMsg(toastText);
       setToastOn(true);
+      setTimeout(() => setToastOn(false), 4000);
 
-      // Propagate up to App for global KPI update
-      onActivitySaved?.({ kg, category });
+      // Üst bileşene (App.jsx) bildir → EcoScore güncellenir
+      onActivitySaved?.({ kg: karbonMiktari, category });
 
-      setTimeout(() => setToastOn(false), 3500);
-    }, 600);
+    } catch (err) {
+      setErrorMsg(`Kayıt başarısız: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
   }, [category, formData, onActivitySaved]);
 
+  // Yerel log silme (backend delete opsiyonel — cascade silme için)
   function handleDelete(id) {
     setLogs(prev => prev.filter(l => l.id !== id));
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* ── Toast ── */}
-      <SuccessToast visible={toastOn} />
+      {/* ── Toastlar ── */}
+      <SuccessToast visible={toastOn}         message={toastMsg} />
+      <ErrorToast   visible={!!errorMsg}      message={errorMsg} />
 
-      {/* ── Category Tab Bar ── */}
+      {/* ── Kategori Tab Barı ── */}
       <CategoryTabs activeCategory={category} onChange={handleCategoryChange} />
 
-      {/* ── Two-column: Form (60%) + Live Panel (40%) ── */}
+      {/* ── İki Kolon: Form (%60) + Canlı Panel (%40) ── */}
       <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 0.65fr', alignItems: 'start' }}>
         <DynamicActivityForm
           category={category}
@@ -144,8 +284,17 @@ export default function ActivityPage({ onActivitySaved }) {
         />
       </div>
 
-      {/* ── Recent Logs Table ── */}
-      <RecentLogsTable logs={logs} onDelete={handleDelete} />
+      {/* ── Son Aktiviteler Tablosu ── */}
+      {logsLoading ? (
+        <div
+          className="rounded-2xl p-8 text-center text-sm"
+          style={{ backgroundColor: '#111816', border: '1px solid #1E3A30', color: '#4B6E5E' }}
+        >
+          Son aktiviteler yükleniyor…
+        </div>
+      ) : (
+        <RecentLogsTable logs={logs} onDelete={handleDelete} />
+      )}
     </div>
   );
 }

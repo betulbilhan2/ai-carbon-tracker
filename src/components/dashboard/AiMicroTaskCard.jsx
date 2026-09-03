@@ -1,27 +1,46 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Clock3, Bot, Zap, Globe2 } from 'lucide-react';
 
-export default function AiMicroTaskCard({ onComplete }) {
-  const [done, setDone]               = useState(false);
-  const [postponed, setPostponed]     = useState(false);
-  const [barWidth, setBarWidth]       = useState(0);
+export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
+  const [done,      setDone]      = useState(false);
+  const [postponed, setPostponed] = useState(false);
+  const [applying,  setApplying]  = useState(false);
+  const [barWidth,  setBarWidth]  = useState(0);
 
-  // Animate motivation bar on mount
+  // Motivasyon çubuğu animasyonu
   useEffect(() => {
-    const timer = setTimeout(() => setBarWidth(72), 300);
+    const pct = oneri ? Math.round(Math.min(oneri.etkiSkoru * 10, 100)) : 72;
+    const timer = setTimeout(() => setBarWidth(pct), 300);
     return () => clearTimeout(timer);
-  }, []);
+  }, [oneri]);
 
-  function handleComplete() {
-    if (done || postponed) return;
-    setDone(true);
-    onComplete?.();
+  async function handleComplete() {
+    if (done || postponed || applying) return;
+    setApplying(true);
+    try {
+      if (oneri?.oneriId && onApply) {
+        await onApply(oneri.oneriId);
+      }
+      setDone(true);
+      onComplete?.();
+    } catch {
+      // Hata olsa da UI'yi tamamlandı yap (optimistic update)
+      setDone(true);
+      onComplete?.();
+    } finally {
+      setApplying(false);
+    }
   }
 
   function handlePostpone() {
     if (done || postponed) return;
     setPostponed(true);
   }
+
+  // Görev metni: backend'den veya varsayılan
+  const gorevMetni  = oneri?.oneriMetni   ?? 'Bugün öğle yemeğini vejetaryen seç.';
+  const etkiSkoru   = oneri?.etkiSkoru    ?? 7.2;
+  const potansiyel  = oneri?.potansiyelTasarruf ?? 'Tahmini 1.8 kg CO₂e tasarruf';
 
   return (
     <div
@@ -32,7 +51,7 @@ export default function AiMicroTaskCard({ onComplete }) {
         borderLeft: '4px solid #22C55E',
       }}
     >
-      {/* ── Badge Row ── */}
+      {/* ── Rozetler ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <span
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
@@ -66,29 +85,30 @@ export default function AiMicroTaskCard({ onComplete }) {
         )}
       </div>
 
-      {/* ── Task Text ── */}
+      {/* ── Görev Metni ── */}
       <div>
         <h3
-          className="text-lg font-bold leading-snug"
-          style={{ color: done ? '#4B6E5E' : '#F0FDF4', textDecoration: done ? 'line-through' : 'none' }}
+          className="text-base font-bold leading-snug"
+          style={{
+            color: done ? '#4B6E5E' : '#F0FDF4',
+            textDecoration: done ? 'line-through' : 'none',
+          }}
         >
-          Bugün öğle yemeğini vejetaryen seç.
+          {gorevMetni}
         </h3>
-        <p className="text-sm mt-2 leading-relaxed" style={{ color: '#4B6E5E' }}>
-          Bu küçük değişiklik tahmini{' '}
-          <span style={{ color: '#22C55E' }}>1.8 kg CO₂e</span> tasarrufu sağlar.
-          Motivasyonel görüşme yaklaşımıyla tüketim örüntülerine özel üretildi.
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: '#4B6E5E' }}>
+          {potansiyel}
         </p>
       </div>
 
-      {/* ── Impact & Duration Badges ── */}
-      <div className="flex items-center gap-3">
+      {/* ── Etki Rozetleri ── */}
+      <div className="flex items-center gap-3 flex-wrap">
         <span
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
           style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}
         >
           <Globe2 size={12} />
-          Tahmini Etki: −1.8 kg CO₂e
+          Etki Skoru: {etkiSkoru.toFixed(1)} / 10
         </span>
         <span
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
@@ -99,7 +119,7 @@ export default function AiMicroTaskCard({ onComplete }) {
         </span>
       </div>
 
-      {/* ── Motivation Bar ── */}
+      {/* ── Motivasyon Çubuğu ── */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-medium" style={{ color: '#4B6E5E' }}>
@@ -109,10 +129,7 @@ export default function AiMicroTaskCard({ onComplete }) {
             {barWidth} / 100
           </span>
         </div>
-        <div
-          className="w-full rounded-full overflow-hidden"
-          style={{ height: '6px', backgroundColor: '#1E3A30' }}
-        >
+        <div className="w-full rounded-full overflow-hidden" style={{ height: '6px', backgroundColor: '#1E3A30' }}>
           <div
             className="h-full rounded-full"
             style={{
@@ -124,28 +141,24 @@ export default function AiMicroTaskCard({ onComplete }) {
         </div>
       </div>
 
-      {/* ── Action Buttons ── */}
+      {/* ── Aksiyon Butonları ── */}
       <div className="flex items-center gap-3">
         <button
           onClick={handleComplete}
-          disabled={done || postponed}
+          disabled={done || postponed || applying}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200"
           style={{
             height: '44px',
             backgroundColor: done ? '#1E3A30' : '#22C55E',
             color: done ? '#4B6E5E' : '#0A0F0D',
-            cursor: done || postponed ? 'not-allowed' : 'pointer',
-            opacity: postponed ? 0.5 : 1,
+            cursor: (done || postponed || applying) ? 'not-allowed' : 'pointer',
+            opacity: (postponed || applying) ? 0.6 : 1,
           }}
-          onMouseEnter={e => {
-            if (!done && !postponed) e.currentTarget.style.backgroundColor = '#16A34A';
-          }}
-          onMouseLeave={e => {
-            if (!done && !postponed) e.currentTarget.style.backgroundColor = '#22C55E';
-          }}
+          onMouseEnter={e => { if (!done && !postponed && !applying) e.currentTarget.style.backgroundColor = '#16A34A'; }}
+          onMouseLeave={e => { if (!done && !postponed && !applying) e.currentTarget.style.backgroundColor = '#22C55E'; }}
         >
           <CheckCircle2 size={16} />
-          {done ? 'Tamamlandı!' : '✅ Yaptım! (+50 Puan)'}
+          {applying ? 'Kaydediliyor…' : done ? 'Tamamlandı!' : '✅ Kabul Et (+50 Puan)'}
         </button>
 
         <button
@@ -156,15 +169,11 @@ export default function AiMicroTaskCard({ onComplete }) {
             height: '44px',
             backgroundColor: 'transparent',
             color: postponed ? '#4B6E5E' : '#86EFAC',
-            border: `1px solid ${postponed ? '#1E3A30' : '#1E3A30'}`,
-            cursor: done || postponed ? 'not-allowed' : 'pointer',
+            border: '1px solid #1E3A30',
+            cursor: (done || postponed) ? 'not-allowed' : 'pointer',
           }}
-          onMouseEnter={e => {
-            if (!done && !postponed) e.currentTarget.style.borderColor = '#22C55E';
-          }}
-          onMouseLeave={e => {
-            if (!done && !postponed) e.currentTarget.style.borderColor = '#1E3A30';
-          }}
+          onMouseEnter={e => { if (!done && !postponed) e.currentTarget.style.borderColor = '#22C55E'; }}
+          onMouseLeave={e => { if (!done && !postponed) e.currentTarget.style.borderColor = '#1E3A30'; }}
         >
           ⏭ Yarına Ertele
         </button>
