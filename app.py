@@ -62,7 +62,7 @@ def home():
 @app.post("/api/v1/recommendation")
 def get_recommendation(user_data: dict):
     try:
-        # 1. Gerçek emisyon hesaplama
+        # 1. Gerçek emisyon hesaplama (Genişletilmiş motor)
         actual_weekly_kg = motor_hesap.calculate_actual_weekly_kg(user_data)
 
         # 2. Model tahmini ve encode işlemleri
@@ -71,18 +71,16 @@ def get_recommendation(user_data: dict):
 
         mevcut_tahmin, secilen_oneriler = onerici.onerileri_sec_ve_simule_et(test_kullanici)
 
-        # Modelin ham çıktısını Render loglarında görmek için print:
         print(f"DEBUG - Modelden gelen ham mevcut_tahmin: {mevcut_tahmin}")
 
-        # Ham expected değer (Haftalık hesaplama)
+        # Ham expected değer (Yıllık tahmini haftalığa çevirme)
         raw_expected = float(mevcut_tahmin / 52) if mevcut_tahmin else 180.0
 
-        # DİNAMİK BEKLENTİ FORMÜLÜ:
-        # Kullanıcının gerçek tüketimi (actual) arttıkça expected değerinin de orantılı olarak yukarı çıkmasını sağlar.
+        # DİNAMİK BEKLENTİ FORMÜLÜ: Yüksek tüketimde tabanı esnetme
         dinamik_taban = 120.0 + max(0.0, (actual_weekly_kg - 200.0) * 0.25)
         expected_weekly_kg = round(max(raw_expected, dinamik_taban), 2)
 
-        # Sapma skoru ve yüzde hesaplaması (Güvenli oran korumasıyla)
+        # Sapma skoru ve yüzde hesaplaması
         deviation_score = round(actual_weekly_kg - expected_weekly_kg, 2)
 
         if expected_weekly_kg > 0:
@@ -102,7 +100,6 @@ def get_recommendation(user_data: dict):
 
         ham_mesaj = en_iyi_oneri.get("mesaj", "")
         
-        # Deviation score mantığına göre doğru mesaj yönlendirmesi
         if deviation_score > 0:
             parlatilmis_mesaj = f"Hedeflenen ortalamanın üzerindesin (%{percentage_deviation} sapma). İyileştirme önerisi: {ham_mesaj}"
         else:
@@ -120,5 +117,4 @@ def get_recommendation(user_data: dict):
         return response
 
     except Exception as e:
-        # Hata durumunda 500 patlaması yerine kontrollü 400 hatası dönme
         raise HTTPException(status_code=400, detail=f"İşlem sırasında hata oluştu: {str(e)}")
