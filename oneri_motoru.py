@@ -70,6 +70,8 @@ class OneriMotoru:
             }
             secilen_kurallar.append(sonuc)
 
+        secilen_kurallar = [s for s in secilen_kurallar if s['simulated_saving_kg_annual'] > 0]
+
         # Yüksek tasarruf sağlayana göre sırala
         secilen_kurallar = sorted(secilen_kurallar, key=lambda x: x['simulated_saving_kg_week'], reverse=True)
         return mevcut_tahmin, secilen_kurallar
