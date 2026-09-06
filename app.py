@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import pandas as pd
 import numpy as np
 import json
@@ -70,6 +70,9 @@ def get_recommendation(user_data: dict):
         test_kullanici = pd.DataFrame([encoded_row])[features]
 
         mevcut_tahmin, secilen_oneriler = onerici.onerileri_sec_ve_simule_et(test_kullanici)
+
+        # Modelin ham çıktısını Render loglarında görmek için print:
+        print(f"DEBUG - Modelden gelen ham mevcut_tahmin: {mevcut_tahmin}")
 
         # Ham expected değer (Haftalık hesaplama)
         raw_expected = float(mevcut_tahmin / 52) if mevcut_tahmin else 180.0
