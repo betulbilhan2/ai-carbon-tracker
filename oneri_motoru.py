@@ -21,7 +21,6 @@ class OneriMotoru:
     def _predict_co2(self, user_df):
         df_scaled = user_df.copy()
         df_scaled[self.num_cols] = self.scaler.transform(df_scaled[self.num_cols])
-        # TabNet dizisi
         X_input = df_scaled[self.features].values
         return self.model.predict(X_input)[0][0]
 
@@ -40,16 +39,14 @@ class OneriMotoru:
             if sutun in user_df_raw.columns:
                 user_val = user_df_raw.iloc[0][sutun]
                 if self._kosul_saglandi_mi(user_val, kural):
-                    # 2. Pipeline v4 Kuralı: Aynı sütun için en spesifik olanı (sınır değeri daha sıkı olanı) tut.
+                    # 2. Pipeline v4 Kuralı: Aynı sütun için en spesifik olanı tut.
                     if sutun not in hedef_kontrol_sozlugu:
                         hedef_kontrol_sozlugu[sutun] = kural
                     else:
                         mevcut_sinir = hedef_kontrol_sozlugu[sutun]["sinir_deger"]
                         yeni_sinir = kural["sinir_deger"]
-                        # 'buyuk' koşulunda sınır değeri büyük olan daha spesifiktir (örn >6, >3'ü ezer)
                         if kural["kosul"] == "buyuk" and yeni_sinir > mevcut_sinir:
                             hedef_kontrol_sozlugu[sutun] = kural
-                        # 'kucuk' koşulunda sınır değeri küçük olan daha spesifiktir
                         elif kural["kosul"] == "kucuk" and yeni_sinir < mevcut_sinir:
                             hedef_kontrol_sozlugu[sutun] = kural
 
