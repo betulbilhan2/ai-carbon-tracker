@@ -22,12 +22,35 @@ with open('01_processed/feature_metadata.json', 'r', encoding='utf-8') as f:
 
 features = metadata['model_features']
 num_cols = metadata['numerical_columns']
+categorical_mapping = metadata['categorical_mapping']
 
 tabnet_model = TabNetRegressor()
 tabnet_model.load_model('02_models/tabnet/tabnet_model_v1.zip')
 
 with open('03_recommendation_pool/oneri_havuzu_v1.json', 'r', encoding='utf-8') as f:
     oneri_havuzu = json.load(f)
+
+def encode_request(user_data, categorical_mapping):
+    row = {}
+    row["Monthly Grocery Bill"] = user_data["monthly_grocery_bill"]
+    row["Vehicle Monthly Distance Km"] = user_data["vehicle_distance_km_month"]
+    row["Waste Bag Weekly Count"] = user_data["waste_bag_weekly_count"]
+    row["How Long TV PC Daily Hour"] = user_data["tv_pc_daily_hour"]
+    row["How Many New Clothes Monthly"] = user_data["new_clothes_monthly"]
+    row["How Long Internet Daily Hour"] = user_data["internet_daily_hour"]
+    row["Diet"] = categorical_mapping["diet"][user_data["diet"]]
+    row["How Often Shower"] = categorical_mapping["how_often_shower"][user_data["how_often_shower"]]
+    row["Heating Energy Source"] = categorical_mapping["heating_energy_source"][user_data["heating_energy_source"]]
+    row["Transport"] = categorical_mapping["transport"][user_data["transport"]]
+    row["Vehicle Type"] = categorical_mapping["vehicle_type"][user_data["vehicle_type"]]
+    row["Social Activity"] = categorical_mapping["social_activity"][user_data["social_activity"]]
+    row["Frequency of Traveling by Air"] = categorical_mapping["frequency_of_traveling_by_air"][user_data["frequency_of_traveling_by_air"]]
+    row["Waste Bag Size"] = categorical_mapping["waste_bag_size"][user_data["waste_bag_size"]]
+    row["Energy efficiency"] = categorical_mapping["energy_efficiency"][user_data["energy_efficiency"]]
+    rec = user_data["recycling"]
+    row["Recycling"] = (1 if rec.get("paper") else 0) + (2 if rec.get("plastic") else 0) + (4 if rec.get("glass") else 0) + (8 if rec.get("metal") else 0)
+    row["Cooking_With"] = user_data["cooking_with"]
+    return row
 
 onerici = oneri_motoru.OneriMotoru(oneri_havuzu, tabnet_model, scaler, features, num_cols)
 print("Sistem başarıyla ayağa kalktı! 🚀")
@@ -39,47 +62,30 @@ def home():
 @app.post("/api/v1/recommendation")
 def get_recommendation(user_data: dict):
     actual_weekly_kg = motor_hesap.calculate_actual_weekly_kg(user_data)
-    expected_weekly_kg = 180.0
-    deviation_score = round(actual_weekly_kg - expected_weekly_kg, 2)
-    
-    test_kullanici = pd.DataFrame([user_data])
-    for col in features:
-        if col not in test_kullanici.columns:
-            test_kullanici[col] = 0
-            
+
+    encoded_row = encode_request(user_data, categorical_mapping)
+    test_kullanici = pd.DataFrame([encoded_row])[features]
+
     mevcut_tahmin, secilen_oneriler = onerici.onerileri_sec_ve_simule_et(test_kullanici)
-    
-    # Önerileri potansiyel tasarruf miktarına göre büyükten küçüğe sıralıyoruz
+
+    expected_weekly_kg = round(mevcut_tahmin / 52, 2)
+    deviation_score = round((actual_weekly_kg - expected_weekly_kg) / expected_weekly_kg, 4) if expected_weekly_kg != 0 else 0.0
+
     if secilen_oneriler:
-        secilen_oneriler = sorted(
-            secilen_oneriler, 
-            key=lambda x: x.get("simulated_saving_kg_week", 0), 
-            reverse=True
-        )
-        # Sapma skoruna ve emisyon durumuna göre farklı bir öneri indeksi seçerek mesajı dinamikleştiriyoruz
-        if deviation_score > 50:
-            index = 0  # Yüksek emisyonda en yüksek tasarruf sağlayan ilk öneri
-        elif deviation_score > 0:
-            index = min(1, len(secilen_oneriler) - 1)  # Orta seviye için alternatif öneri
-        else:
-            index = min(2, len(secilen_oneriler) - 1)  # Tasarruf/düşük emisyon durumunda farklı bir tebrik/koruma önerisi
-            
-        en_iyi_oneri = secilen_oneriler[index]
+        en_iyi_oneri = secilen_oneriler[0]
     else:
         en_iyi_oneri = {
             "recommendation_id": 0,
             "simulated_saving_kg_week": 0.0,
             "mesaj": "Genel karbon azaltım ipuçlarını inceleyebilirsin."
         }
-    
+
     ham_mesaj = en_iyi_oneri.get("mesaj", "")
-    
-    # Duruma göre mesajı da dinamik hale getirelim
     if deviation_score > 0:
-        parlatilmis_mesaj = f"Hedeflenen ortalamanın üzerindesin ({deviation_score} kg sapma). İyileştirme önerisi: {ham_mesaj}"
+        parlatilmis_mesaj = f"Hedeflenen ortalamanın üzerindesin (%{deviation_score*100:.0f} sapma). İyileştirme önerisi: {ham_mesaj}"
     else:
         parlatilmis_mesaj = f"Harika bir ilerleme kaydediyorsun! 😊 Küçük bir öneri: {ham_mesaj}"
-    
+
     response = {
         "actual_weekly_kg": float(actual_weekly_kg),
         "expected_weekly_kg": float(expected_weekly_kg),
@@ -89,5 +95,4 @@ def get_recommendation(user_data: dict):
         "simulated_saving_kg_week": float(en_iyi_oneri.get("simulated_saving_kg_week", 0.0)),
         "message": str(parlatilmis_mesaj)
     }
-    
     return response
