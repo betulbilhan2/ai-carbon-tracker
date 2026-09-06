@@ -61,38 +61,59 @@ def home():
 
 @app.post("/api/v1/recommendation")
 def get_recommendation(user_data: dict):
-    actual_weekly_kg = motor_hesap.calculate_actual_weekly_kg(user_data)
+    try:
+        # 1. Gerçek emisyon hesaplama
+        actual_weekly_kg = motor_hesap.calculate_actual_weekly_kg(user_data)
 
-    encoded_row = encode_request(user_data, categorical_mapping)
-    test_kullanici = pd.DataFrame([encoded_row])[features]
+        # 2. Model tahmini ve encode işlemleri
+        encoded_row = encode_request(user_data, categorical_mapping)
+        test_kullanici = pd.DataFrame([encoded_row])[features]
 
-    mevcut_tahmin, secilen_oneriler = onerici.onerileri_sec_ve_simule_et(test_kullanici)
+        mevcut_tahmin, secilen_oneriler = onerici.onerileri_sec_ve_simule_et(test_kullanici)
 
-    expected_weekly_kg = round(mevcut_tahmin / 52, 2)
-    deviation_score = round((actual_weekly_kg - expected_weekly_kg) / expected_weekly_kg, 4) if expected_weekly_kg != 0 else 0.0
+        # Ham expected değer (Haftalık hesaplama)
+        raw_expected = float(mevcut_tahmin / 52) if mevcut_tahmin else 180.0
 
-    if secilen_oneriler:
-        en_iyi_oneri = secilen_oneriler[0]
-    else:
-        en_iyi_oneri = {
-            "recommendation_id": 0,
-            "simulated_saving_kg_week": 0.0,
-            "mesaj": "Genel karbon azaltım ipuçlarını inceleyebilirsin."
+        # DÜZELTME 1: Uç senaryolarda expected değerin çok düşmesini engellemek için alt sınır (clamp)
+        expected_weekly_kg = round(max(raw_expected, 120.0), 2)
+
+        # DÜZELTME 2: Sapma skoru ve yüzde hesaplaması (Güvenli oran korumasıyla)
+        deviation_score = round(actual_weekly_kg - expected_weekly_kg, 2)
+
+        if expected_weekly_kg > 0:
+            percentage_deviation = round((abs(deviation_score) / expected_weekly_kg) * 100, 1)
+        else:
+            percentage_deviation = 0.0
+
+        # 3. Öneri seçimi
+        if secilen_oneriler:
+            en_iyi_oneri = secilen_oneriler[0]
+        else:
+            en_iyi_oneri = {
+                "recommendation_id": 0,
+                "simulated_saving_kg_week": 0.0,
+                "mesaj": "Genel karbon azaltım ipuçlarını inceleyebilirsin."
+            }
+
+        ham_mesaj = en_iyi_oneri.get("mesaj", "")
+        
+        # DÜZELTME 3: deviation_score mantığına göre doğru mesaj yönlendirmesi
+        if deviation_score > 0:
+            parlatilmis_mesaj = f"Hedeflenen ortalamanın üzerindesin (%{percentage_deviation} sapma). İyileştirme önerisi: {ham_mesaj}"
+        else:
+            parlatilmis_mesaj = f"Harika bir ilerleme kaydediyorsun! 😊 Küçük bir öneri: {ham_mesaj}"
+
+        response = {
+            "actual_weekly_kg": float(round(actual_weekly_kg, 2)),
+            "expected_weekly_kg": float(expected_weekly_kg),
+            "deviation_score": float(deviation_score),
+            "cluster_id": 1,
+            "recommendation_id": int(en_iyi_oneri.get("recommendation_id", 0)),
+            "simulated_saving_kg_week": float(en_iyi_oneri.get("simulated_saving_kg_week", 0.0)),
+            "message": str(parlatilmis_mesaj)
         }
+        return response
 
-    ham_mesaj = en_iyi_oneri.get("mesaj", "")
-    if deviation_score > 0:
-        parlatilmis_mesaj = f"Hedeflenen ortalamanın üzerindesin (%{deviation_score*100:.0f} sapma). İyileştirme önerisi: {ham_mesaj}"
-    else:
-        parlatilmis_mesaj = f"Harika bir ilerleme kaydediyorsun! 😊 Küçük bir öneri: {ham_mesaj}"
-
-    response = {
-        "actual_weekly_kg": float(actual_weekly_kg),
-        "expected_weekly_kg": float(expected_weekly_kg),
-        "deviation_score": float(deviation_score),
-        "cluster_id": 1,
-        "recommendation_id": int(en_iyi_oneri.get("recommendation_id", 0)),
-        "simulated_saving_kg_week": float(en_iyi_oneri.get("simulated_saving_kg_week", 0.0)),
-        "message": str(parlatilmis_mesaj)
-    }
-    return response
+    except Exception as e:
+        # DÜZELTME 4: Hata durumunda 500 patlaması yerine kontrollü 400 hatası dönme
+        raise HTTPException(status_code=400, detail=f"İşlem sırasında hata oluştu: {str(e)}")
