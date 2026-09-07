@@ -7,13 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 // ── 1. Services ────────────────────────────────────────────────────
 builder.Services.AddControllers();
 
-// ── FastAPI AI Mikroservis HTTP İstemcisi ──────────────────────────
-builder.Services.AddHttpClient("FastApiClient", c =>
-{
-    c.BaseAddress = new Uri("http://localhost:8000");
-    c.Timeout     = TimeSpan.FromSeconds(5); // Servis cevap vermezse 5 sn'de fallback'e düş
-});
-
 // Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -44,21 +37,21 @@ builder.Services.AddDbContext<EcoTrackDbContext>(options =>
     )
 );
 
-// ── 3. CORS — React frontend ───────────────────────────────────────
+// ── 2.1 FastApiClient (Python AI Mikroservisi) ─────────────────────
+builder.Services.AddHttpClient("FastApiClient", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8000");
+    client.Timeout = TimeSpan.FromSeconds(3); // Hızlı yanıt veya fallback
+});
+
+// ── 3. CORS Yapılandırması ──────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("ReactFrontend", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy
-            .WithOrigins(
-                "http://localhost:5173",   // Vite dev server (primary)
-                "http://localhost:5174",   // Vite dev server (fallback)
-                "https://localhost:5173",
-                "https://localhost:5174"
-            )
-            .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .AllowAnyHeader()
-            .AllowCredentials();
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
@@ -77,10 +70,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// Geliştirme ortamında port yönlendirmesi kaynaklı fetch kopmalarını engellemek için devre dışı bırakıldı:
+// app.UseHttpsRedirection();
+
+app.UseRouting();
 
 // CORS middleware
-app.UseCors("ReactFrontend");
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 app.MapControllers();
@@ -136,6 +132,46 @@ using (var scope = app.Services.CreateScope())
                 await db.SaveChangesAsync();
 
                 logger.LogInformation("🌱 Varsayılan kullanıcı istatistiği eklendi: {Rozet}, Seri: {Seri}", defaultStat.RozetAdi, defaultStat.GunlukSeri);
+            }
+
+            // 3. Ek Örnek Öğrenci Kullanıcıları (Liderlik tablosu için)
+            var sampleStudents = new[]
+            {
+                new { Ad = "Mehmet Demir", Eposta = "mehmet.demir@metu.edu.tr", Limit = 50.0, Tasarruf = 48.0, Seri = 18, Rozet = "Çevre Şampiyonu 🏆" },
+                new { Ad = "Zeynep Çelik", Eposta = "zeynep.celik@metu.edu.tr", Limit = 52.0, Tasarruf = 41.5, Seri = 14, Rozet = "14 Günlük Seri 🔥" },
+                new { Ad = "Selin Arslan", Eposta = "selin.arslan@metu.edu.tr", Limit = 54.0, Tasarruf = 32.0, Seri = 9,  Rozet = "Gezegen Dostu 🌍" },
+                new { Ad = "Caner Erkin",  Eposta = "caner.erkin@metu.edu.tr",  Limit = 60.0, Tasarruf = 15.0, Seri = 5,  Rozet = "İlk Adım 🌱" }
+            };
+
+            foreach (var student in sampleStudents)
+            {
+                var userExists = await db.Users.FirstOrDefaultAsync(u => u.Eposta == student.Eposta);
+                if (userExists == null)
+                {
+                    var newUser = new User
+                    {
+                        AdSoyad = student.Ad,
+                        Eposta = student.Eposta,
+                        SifrelenmisSifre = "hashed_secret_student",
+                        HedeflenenKarbonLimiti = student.Limit,
+                        KayitTarihi = DateTime.UtcNow.AddDays(-20)
+                    };
+                    db.Users.Add(newUser);
+                    await db.SaveChangesAsync();
+
+                    var newStat = new UserStatistic
+                    {
+                        KullaniciId = newUser.KullaniciId,
+                        ToplamTasarruf = student.Tasarruf,
+                        GunlukSeri = student.Seri,
+                        RozetAdi = student.Rozet,
+                        GuncellenmeZamani = DateTime.UtcNow
+                    };
+                    db.UserStatistics.Add(newStat);
+                    await db.SaveChangesAsync();
+
+                    logger.LogInformation("🌱 Örnek öğrenci eklendi: {Ad} (ID: {Id})", student.Ad, newUser.KullaniciId);
+                }
             }
         }
         else

@@ -11,28 +11,39 @@ const RANK_ROW_STYLE = {
 };
 
 function initials(name) {
-  return name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  return (name || 'U').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
 }
 
 // Random but stable color per name (for avatars)
 const AVATAR_COLORS = ['#22C55E', '#14B8A6', '#60A5FA', '#F59E0B', '#A78BFA', '#FB923C'];
 function avatarColor(name) {
   let h = 0;
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+  for (const c of (name || 'User')) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 
-export default function LeaderboardTable({ scope }) {
+export default function LeaderboardTable({ scope = 'university', liveData = null }) {
   const [expanded, setExpanded] = useState(false);
-  const rows = MOCK_DATA[scope] ?? MOCK_DATA.university;
 
-  // Top 10 + always show user row separately if outside top 10
-  const top10   = rows.filter(r => !r.isUser).slice(0, 10);
+  // Canlı API verisi varsa kullan, yoksa scope'a göre mock veriyi fallback olarak göster
+  const rows = (liveData && liveData.length > 0)
+    ? liveData.map(item => ({
+        rank:         item.siraNo,
+        name:         item.adSoyad,
+        institution:  item.universite,
+        score:        item.ecoPuan,
+        weeklyChange: item.haftalikDegisim ?? +18,
+        badge:        item.rozetEmoji || '🌱',
+        isUser:       item.aktifKullaniciMi ?? false,
+      }))
+    : (MOCK_DATA[scope] ?? MOCK_DATA.university);
+
+  const top10   = rows.filter(r => !r.isUser || r.rank <= 10).slice(0, 10);
   const userRow = rows.find(r => r.isUser);
-  const visible = expanded ? top10 : top10.slice(0, 7);
+  const visible = expanded ? rows : top10.slice(0, 8);
 
   function renderRow(row, idx, forceUserStyle = false) {
-    const isUser   = row.isUser || forceUserStyle;
+    const isUser    = row.isUser || forceUserStyle;
     const rankStyle = RANK_ROW_STYLE[row.rank] ?? null;
 
     let rowBg     = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)';
@@ -40,7 +51,7 @@ export default function LeaderboardTable({ scope }) {
     if (isUser) { rowBg = 'rgba(34,197,94,0.06)'; rowBorder = '#22C55E33'; }
     else if (rankStyle) { rowBg = rankStyle.bg; rowBorder = rankStyle.border; }
 
-    const weekly = row.weeklyChange;
+    const weekly       = row.weeklyChange ?? 0;
     const weeklyColor  = weekly > 0 ? '#22C55E' : weekly < 0 ? '#EF4444' : '#4B6E5E';
     const weeklyPrefix = weekly > 0 ? '+' : '';
 
@@ -48,7 +59,7 @@ export default function LeaderboardTable({ scope }) {
 
     return (
       <tr
-        key={`${scope}-${row.rank}`}
+        key={`${scope}-${row.rank}-${row.name}`}
         style={{
           backgroundColor: rowBg,
           borderLeft: isUser ? '3px solid #22C55E' : '3px solid transparent',
@@ -135,14 +146,19 @@ export default function LeaderboardTable({ scope }) {
     >
       {/* Header */}
       <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1E3A30' }}>
-        <h3 className="text-sm font-semibold" style={{ color: '#86EFAC' }}>
-          En Yüksek Etki Puanına Sahip Kullanıcılar
-        </h3>
+        <div>
+          <h3 className="text-sm font-semibold" style={{ color: '#86EFAC' }}>
+            En Yüksek Etki Puanına Sahip Kullanıcılar
+          </h3>
+          <p className="text-xs mt-0.5" style={{ color: '#4B6E5E' }}>
+            {liveData ? '● Supabase canlı sıralama verisi' : 'Sıralama'}
+          </p>
+        </div>
         <span
           className="text-xs rounded-full px-3 py-0.5 font-mono"
           style={{ backgroundColor: '#182420', color: '#4B6E5E', border: '1px solid #1E3A30' }}
         >
-          Top 10
+          {liveData ? `${rows.length} Kullanıcı` : 'Top 10'}
         </span>
       </div>
 
@@ -165,7 +181,7 @@ export default function LeaderboardTable({ scope }) {
             {visible.map((row, idx) => renderRow(row, idx))}
 
             {/* Divider + user row if outside top 10 */}
-            {userRow && userRow.rank > 10 && (
+            {userRow && userRow.rank > 10 && !expanded && (
               <>
                 <tr>
                   <td colSpan={6}>
@@ -175,7 +191,7 @@ export default function LeaderboardTable({ scope }) {
                     >
                       <div className="flex-1 h-px" style={{ backgroundColor: '#1E3A30' }} />
                       <span className="text-xs" style={{ color: '#4B6E5E' }}>
-                        ···  {userRow.rank - 10} sıra aşağıda  ···
+                        ··· {userRow.rank - 10} sıra aşağıda ···
                       </span>
                       <div className="flex-1 h-px" style={{ backgroundColor: '#1E3A30' }} />
                     </div>
@@ -189,21 +205,23 @@ export default function LeaderboardTable({ scope }) {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4" style={{ borderTop: '1px solid #1E3A30' }}>
-        <button
-          onClick={() => setExpanded(v => !v)}
-          className="flex items-center gap-2 text-sm font-medium transition-colors"
-          style={{ color: '#14B8A6' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#22C55E')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#14B8A6')}
-        >
-          <ChevronDown
-            size={16}
-            style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-          />
-          {expanded ? 'Daha Az Göster' : 'Tüm Sıralamayı Gör'}
-        </button>
-      </div>
+      {rows.length > 8 && (
+        <div className="px-6 py-4" style={{ borderTop: '1px solid #1E3A30' }}>
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
+            style={{ color: '#14B8A6' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#22C55E')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#14B8A6')}
+          >
+            <ChevronDown
+              size={16}
+              style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+            />
+            {expanded ? 'Daha Az Göster' : `Tüm Sıralamayı Gör (${rows.length})`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

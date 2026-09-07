@@ -1,34 +1,13 @@
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ReferenceLine,
+  Area,
   Line,
   ComposedChart,
-  Legend,
 } from 'recharts';
-
-// ── Static mock data ────────────────────────────────────────────
-const RAW_DATA = [
-  { day: 'Pzt 1',  actual: 5.8,  predicted: 6.1 },
-  { day: 'Sal 2',  actual: 7.2,  predicted: 6.8 },
-  { day: 'Çar 3',  actual: 6.4,  predicted: 6.5 },
-  { day: 'Per 4',  actual: 5.1,  predicted: 6.2 },
-  { day: 'Cum 5',  actual: 8.3,  predicted: 7.0 },
-  { day: 'Cmt 6',  actual: 9.1,  predicted: 7.5 },
-  { day: 'Paz 7',  actual: 6.9,  predicted: 7.2 },
-  { day: 'Pzt 8',  actual: 6.2,  predicted: 6.8 },
-  { day: 'Sal 9',  actual: 11.4, predicted: 6.9 }, // ← Anormallik
-  { day: 'Çar 10', actual: 7.8,  predicted: 7.1 },
-  { day: 'Per 11', actual: 6.5,  predicted: 6.9 },
-  { day: 'Cum 12', actual: 7.0,  predicted: 7.0 },
-  { day: 'Cmt 13', actual: 8.2,  predicted: 7.3 },
-  { day: 'Paz 14', actual: 6.8,  predicted: 7.0 },
-];
 
 // ── Custom Tooltip ───────────────────────────────────────────────
 function CustomTooltip({ active, payload, label }) {
@@ -55,23 +34,23 @@ function CustomTooltip({ active, payload, label }) {
       )}
       {predicted && (
         <p className="mt-1" style={{ color: '#60A5FA' }}>
-          ◌ Tahmin:&nbsp;
+          ◌ Günlük Hedef:&nbsp;
           <span className="font-mono font-bold">{predicted.value} kg</span>
         </p>
       )}
       {actual && predicted && (
         <p className="mt-1" style={{ color: '#4B6E5E' }}>
-          Δ Fark:&nbsp;
+          Δ Durum:&nbsp;
           <span
             className="font-mono font-bold"
             style={{
               color:
-                actual.value - predicted.value > 1
+                actual.value > predicted.value
                   ? '#EF4444'
                   : '#86EFAC',
             }}
           >
-            {(actual.value - predicted.value).toFixed(1)} kg
+            {actual.value > predicted.value ? `+${(actual.value - predicted.value).toFixed(1)} kg aşım` : 'Hedef altında ✓'}
           </span>
         </p>
       )}
@@ -79,37 +58,27 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-// ── Anomaly Reference Label ──────────────────────────────────────
-function AnomalyLabel({ viewBox }) {
-  const { x } = viewBox;
-  return (
-    <g>
-      <rect
-        x={x - 44}
-        y={4}
-        width={88}
-        height={22}
-        rx={6}
-        fill="#F59E0B22"
-        stroke="#F59E0B"
-        strokeWidth={1}
-      />
-      <text
-        x={x}
-        y={19}
-        textAnchor="middle"
-        fill="#F59E0B"
-        fontSize={10}
-        fontWeight="600"
-      >
-        ⚠️ Anormallik
-      </text>
-    </g>
-  );
-}
-
 // ── Main Component ───────────────────────────────────────────────
-export default function EmissionTrendChart() {
+export default function EmissionTrendChart({ trendData }) {
+  // Backend'den gelen haftalikTrend dizisini recharts formatına dönüştür
+  const chartData = (trendData && trendData.length > 0)
+    ? trendData.map(item => ({
+        day: `${item.gun} (${item.tarih})`,
+        actual: Number(item.miktar ?? 0),
+        predicted: Number(item.tahmin ?? 8.0),
+      }))
+    : [
+        { day: 'Pzt', actual: 0, predicted: 8.0 },
+        { day: 'Sal', actual: 0, predicted: 8.0 },
+        { day: 'Çar', actual: 0, predicted: 8.0 },
+        { day: 'Per', actual: 0, predicted: 8.0 },
+        { day: 'Cum', actual: 0, predicted: 8.0 },
+        { day: 'Cmt', actual: 0, predicted: 8.0 },
+        { day: 'Paz', actual: 0, predicted: 8.0 },
+      ];
+
+  const totalActual = chartData.reduce((acc, curr) => acc + curr.actual, 0);
+
   return (
     <div
       className="rounded-2xl p-6 transition-all"
@@ -120,20 +89,25 @@ export default function EmissionTrendChart() {
     >
       {/* Card Header */}
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-sm font-semibold" style={{ color: '#86EFAC' }}>
-          Haftalık Emisyon Trendi
-        </h3>
+        <div>
+          <h3 className="text-sm font-semibold" style={{ color: '#86EFAC' }}>
+            Haftalık Emisyon Trendi
+          </h3>
+          <p className="text-xs mt-0.5" style={{ color: '#4B6E5E' }}>
+            Toplam: <span className="font-mono font-bold" style={{ color: '#22C55E' }}>{totalActual.toFixed(2)} kg CO₂e</span>
+          </p>
+        </div>
         <span
           className="text-xs font-medium rounded-full px-3 py-1"
           style={{ backgroundColor: '#182420', color: '#4B6E5E', border: '1px solid #1E3A30' }}
         >
-          Son 14 Gün
+          Son 7 Gün (Canlı)
         </span>
       </div>
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={260}>
-        <ComposedChart data={RAW_DATA} margin={{ top: 20, right: 8, left: -10, bottom: 0 }}>
+        <ComposedChart data={chartData} margin={{ top: 20, right: 8, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#22C55E" stopOpacity={0.25} />
@@ -160,59 +134,40 @@ export default function EmissionTrendChart() {
             tickFormatter={v => `${v}kg`}
           />
 
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#1E3A30', strokeWidth: 1 }} />
+          <Tooltip content={<CustomTooltip />} />
 
-          {/* Predicted area (behind actual) */}
-          <Area
-            type="monotone"
-            dataKey="predicted"
-            stroke="#60A5FA"
-            strokeWidth={1.5}
-            strokeDasharray="5 4"
-            fill="url(#gradPredicted)"
-            dot={false}
-            activeDot={false}
-          />
-
-          {/* Actual area */}
+          {/* Gerçekleşen: Green Area + Line */}
           <Area
             type="monotone"
             dataKey="actual"
             stroke="#22C55E"
-            strokeWidth={2}
+            strokeWidth={2.5}
             fill="url(#gradActual)"
-            dot={false}
-            activeDot={{ r: 5, fill: '#22C55E', strokeWidth: 0 }}
+            dot={{ fill: '#22C55E', r: 4, strokeWidth: 0 }}
+            activeDot={{ fill: '#86EFAC', r: 6, stroke: '#22C55E', strokeWidth: 2 }}
           />
 
-          {/* Anomaly Reference Line */}
-          <ReferenceLine
-            x="Sal 9"
-            stroke="#F59E0B"
-            strokeDasharray="4 3"
+          {/* Hedef / Tahmin: Blue dashed line */}
+          <Line
+            type="monotone"
+            dataKey="predicted"
+            stroke="#60A5FA"
             strokeWidth={1.5}
-            label={<AnomalyLabel />}
+            strokeDasharray="4 4"
+            dot={false}
           />
         </ComposedChart>
       </ResponsiveContainer>
 
       {/* Legend */}
-      <div className="flex items-center gap-5 mt-3 pl-4">
+      <div className="flex items-center gap-6 mt-4 text-xs" style={{ color: '#4B6E5E' }}>
         <div className="flex items-center gap-2">
-          <div className="rounded-full" style={{ width: 10, height: 10, backgroundColor: '#22C55E' }} />
-          <span className="text-xs" style={{ color: '#4B6E5E' }}>Gerçekleşen</span>
+          <span className="w-4 h-0.5 rounded-full inline-block" style={{ backgroundColor: '#22C55E' }} />
+          <span>Gerçekleşen Emisyon (kg)</span>
         </div>
         <div className="flex items-center gap-2">
-          <svg width="16" height="2">
-            <line x1="0" y1="1" x2="16" y2="1" stroke="#60A5FA" strokeWidth="2" strokeDasharray="4 2" />
-          </svg>
-          <span className="text-xs" style={{ color: '#4B6E5E' }}>TabNet Tahmini</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <svg width="16" height="2">
-            <line x1="0" y1="1" x2="16" y2="1" stroke="#F59E0B" strokeWidth="2" strokeDasharray="4 2" />
-          </svg>
-          <span className="text-xs" style={{ color: '#4B6E5E' }}>Anormallik</span>
+          <span className="w-4 h-0.5 rounded-full inline-block border-t border-dashed" style={{ borderColor: '#60A5FA' }} />
+          <span>Günlük Hedef Sınırı</span>
         </div>
       </div>
     </div>

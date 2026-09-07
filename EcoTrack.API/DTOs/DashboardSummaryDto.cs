@@ -18,6 +18,12 @@ public class DashboardSummaryDto
     /// <summary>Haftalık kullanım yüzdesi: (HaftalikToplamKarbon / HaftalikLimit) * 100.</summary>
     public double ButceYuzdesi     { get; init; }
 
+    /// <summary>Kalan haftalık bütçe miktarı (kg CO₂e).</summary>
+    public double KalanButce       { get; init; }
+
+    /// <summary>Haftalık limit aşıldı mı?</summary>
+    public bool   ButceAsildiMi    { get; init; }
+
     // ── Gamification ───────────────────────────────────────────────
     /// <summary>Toplam modellenen CO₂e tasarrufu (kg).</summary>
     public double ToplamTasarruf   { get; init; }
@@ -31,6 +37,13 @@ public class DashboardSummaryDto
     /// <summary>Kullanıcının aktif rozet adı.</summary>
     public string AktifRozet      { get; init; } = "İlk Adım";
 
+    // ── Dinamik Grafikler ─────────────────────────────────────────
+    /// <summary>Son 7 günün günlük emisyon dağılımı (Pzt, Sal, Çar, ...).</summary>
+    public IList<GunlukEmisyonDto> HaftalikTrend { get; init; } = new List<GunlukEmisyonDto>();
+
+    /// <summary>Ana kategorilere göre emisyon kırılımı (Ulaşım, Enerji, Beslenme, Sıfır Atık).</summary>
+    public IList<KategoriKirilimiDto> KategoriDagilimi { get; init; } = new List<KategoriKirilimiDto>();
+
     // ── AI Öneri ──────────────────────────────────────────────────
     /// <summary>En güncel uygulanmamış AI önerisi.</summary>
     public OneriOzetiDto? GununOnerisi { get; init; }
@@ -38,6 +51,29 @@ public class DashboardSummaryDto
     // ── Son Aktiviteler ───────────────────────────────────────────
     /// <summary>Kullanıcının son 5 aktivite logu.</summary>
     public IList<AktiviteLogDto> SonAktiviteler { get; init; } = new List<AktiviteLogDto>();
+}
+
+/// <summary>
+/// Günlük emisyon trend satırı.
+/// </summary>
+public class GunlukEmisyonDto
+{
+    public string gun        { get; init; } = string.Empty; // "Pzt", "Sal", vb.
+    public string tarih      { get; init; } = string.Empty; // "08.09"
+    public double miktar     { get; init; }                 // Gerçekleşen kg CO₂e
+    public double tahmin     { get; init; }                 // Hedef / Model tahmini kg CO₂e
+}
+
+/// <summary>
+/// Kategori dağılımı pasta grafiği satırı.
+/// </summary>
+public class KategoriKirilimiDto
+{
+    public string kategori { get; init; } = string.Empty; // "Ulaşım", "Enerji", "Beslenme", "Sıfır Atık"
+    public string emoji    { get; init; } = string.Empty;
+    public double miktar   { get; init; }                 // Toplam kg CO₂e
+    public double yuzde    { get; init; }                 // % oran (0-100)
+    public string renk     { get; init; } = "#22C55E";    // Hex renk kodu
 }
 
 /// <summary>
@@ -58,12 +94,12 @@ public class OneriOzetiDto
 /// </summary>
 public class AktiviteLogDto
 {
-    public int      AktiviteId      { get; init; }
-    public string   KategoriAdi     { get; init; } = string.Empty;
-    public string   BirimTipi       { get; init; } = string.Empty;
-    public double   TuketimDegeri   { get; init; }
+    public int      AktiviteId       { get; init; }
+    public string   KategoriAdi      { get; init; } = string.Empty;
+    public string   BirimTipi        { get; init; } = string.Empty;
+    public double   TuketimDegeri    { get; init; }
     public double   HesaplananKarbon { get; init; }
-    public DateTime AktiviteTarihi  { get; init; }
+    public DateTime AktiviteTarihi   { get; init; }
 }
 
 /// <summary>

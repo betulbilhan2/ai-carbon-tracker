@@ -16,7 +16,7 @@ export default function OverviewPage({ onTaskComplete, onNavigateActivity, weekl
       const data = await getDashboardSummary(1);
       setSummary(data);
     } catch {
-      // API mevcut değilse null bırak — bileşenler varsayılan değerleriyle çalışır
+      // API geçici olarak ulaşılamazsa null kalır, bileşenler varsayılan değerleri kullanır
       setSummary(null);
     } finally {
       setLoading(false);
@@ -29,44 +29,55 @@ export default function OverviewPage({ onTaskComplete, onNavigateActivity, weekl
 
   // "Kabul Et" butonuna basıldığında öneriyi backend'de uygula
   async function handleApplyRecommendation(oneriId) {
-    await applyRecommendation(oneriId, 1);
-    // Özeti yenile — yeni öneri veya güncel puan gelsin
-    fetchSummary();
-    onTaskComplete?.();
+    try {
+      await applyRecommendation(oneriId, 1);
+      await fetchSummary(); // Güncel istatistikleri ve yeni öneriyi getir
+      onTaskComplete?.();
+    } catch (err) {
+      console.error('Öneri uygulanırken hata:', err);
+    }
   }
+
+  const effectiveLimit = summary?.haftalikLimit ?? weeklyLimit;
+  const haftalikKarbon = summary?.haftalikToplamKarbon ?? 0;
+  const butceYuzdesi   = summary?.butceYuzdesi ?? Math.round((haftalikKarbon / (effectiveLimit || 1)) * 100);
 
   return (
     <div className="flex flex-col gap-6">
 
-      {/* ── Yükleme İndikatörü (yalnızca ilk yüklemede) ── */}
+      {/* ── Yükleme Durumu ── */}
       {loading && (
         <div
-          className="rounded-2xl px-5 py-3 text-sm"
+          className="rounded-2xl px-5 py-3 text-xs flex items-center justify-between"
           style={{
             backgroundColor: 'rgba(34,197,94,0.06)',
             border: '1px solid rgba(34,197,94,0.15)',
-            color: '#4B6E5E',
+            color: '#86EFAC',
           }}
         >
-          📡 Dashboard verisi yükleniyor…
+          <span>📡 Supabase ve .NET API'den canlı analitik veriler senkronize ediliyor…</span>
+          <span className="animate-pulse">● Canlı</span>
         </div>
       )}
 
-      {/* ── Satır 1: KPI Kartları (canlı veri) ── */}
+      {/* ── Satır 1: Canlı KPI Kartları ── */}
       <KpiGrid
-        weeklyLimit={weeklyLimit}
-        haftalikKarbon={summary?.haftalikToplamKarbon ?? 0}
-        butceYuzdesi={summary?.butceYuzdesi           ?? 0}
+        weeklyLimit={effectiveLimit}
+        haftalikKarbon={haftalikKarbon}
+        butceYuzdesi={butceYuzdesi}
         gunlukSeri={summary?.gunlukSeri               ?? 0}
         ecoPuan={summary?.ecoPuan                     ?? 0}
         aktifRozet={summary?.aktifRozet               ?? 'İlk Adım'}
         toplamTasarruf={summary?.toplamTasarruf        ?? 0}
       />
 
-      {/* ── Satır 2: Grafikler (%60/%40) ── */}
+      {/* ── Satır 2: Dinamik Grafikler (%60 / %40) ── */}
       <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 0.65fr' }}>
-        <EmissionTrendChart />
-        <CategoryDonutChart />
+        <EmissionTrendChart trendData={summary?.haftalikTrend ?? []} />
+        <CategoryDonutChart
+          categoriesData={summary?.kategoriDagilimi ?? []}
+          bugunkuKarbon={summary?.bugunkuKarbon ?? 0}
+        />
       </div>
 
       {/* ── Satır 3: AI Görev + Hızlı Logger ── */}

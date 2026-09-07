@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EcoTrack.API.Data;
 using EcoTrack.API.DTOs;
+using System.Globalization;
 
 namespace EcoTrack.API.Controllers;
 
@@ -13,6 +14,8 @@ public class DashboardController : ControllerBase
     private readonly EcoTrackDbContext _context;
     private readonly ILogger<DashboardController> _logger;
 
+    private static readonly string[] GunKisaAdlari = new[] { "Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt" };
+
     public DashboardController(EcoTrackDbContext context, ILogger<DashboardController> logger)
     {
         _context = context;
@@ -23,8 +26,7 @@ public class DashboardController : ControllerBase
     // GET /api/dashboard/summary?kullaniciId=1
     // ═══════════════════════════════════════════════════════════════
     /// <summary>
-    /// Dashboard için kullanıcının tüm analitik özetini tek sorguda döner.
-    /// Sekans Diyagramı Adım 1-6 uygulanır.
+    /// Dashboard için kullanıcının tüm analitik özetini, haftalık trendini ve kategori dağılımını döner.
     /// </summary>
     [HttpGet("summary")]
     [ProducesResponseType(typeof(DashboardSummaryDto), StatusCodes.Status200OK)]
@@ -39,49 +41,121 @@ public class DashboardController : ControllerBase
         if (kullanici is null)
             return NotFound(new { message = $"Kullanıcı bulunamadı. ID: {kullaniciId}" });
 
-        double haftalikLimit = kullanici.HedeflenenKarbonLimiti;
+        double haftalikLimit = kullanici.HedeflenenKarbonLimiti > 0 ? kullanici.HedeflenenKarbonLimiti : 56.0;
 
-        // ── Adım 2: Haftalık toplam karbon (son 7 gün) ────────────
-        DateTime haftaBaslangici = DateTime.UtcNow.AddDays(-7).Date;
-        DateTime bugunBaslangici = DateTime.UtcNow.Date;
-        DateTime bugunBitis     = bugunBaslangici.AddDays(1);
+        // ── Adım 2: Tarih aralıkları ve son 7 günlük hesaplamalar ─
+        DateTime bugunUtc = DateTime.UtcNow.Date;
+        DateTime yediGunOnce = bugunUtc.AddDays(-6); // Bugün dahil son 7 gün
 
-        // Tüm haftalık hesaplamaları tek sorguda çek
-        var haftalikHesaplamalar = await _context.CarbonCalculations
+        var tumKullaniciAktiviteleri = await _context.Activities
             .AsNoTracking()
-            .Where(cc => cc.KullaniciId == kullaniciId
-                      && cc.HesaplamaTarihi >= haftaBaslangici)
-            .Select(cc => new { cc.KarbonMiktari, cc.HesaplamaTarihi })
+            .Include(a => a.Category)
+            .Include(a => a.CarbonCalculation)
+            .Where(a => a.KullaniciId == kullaniciId)
             .ToListAsync();
 
-        double haftalikToplamKarbon = Math.Round(
-            haftalikHesaplamalar.Sum(cc => cc.KarbonMiktari), 2);
+        // Son 7 günün hesaplamaları
+        var haftalikHesaplamalar = tumKullaniciAktiviteleri
+            .Where(a => a.AktiviteTarihi.Date >= yediGunOnce && a.AktiviteTarihi.Date <= bugunUtc)
+            .Select(a => new
+            {
+                Tarih = a.AktiviteTarihi.Date,
+                Karbon = a.CarbonCalculation?.KarbonMiktari ?? 0.0
+            })
+            .ToList();
 
-        // ── Adım 3: Bugünkü toplam karbon ─────────────────────────
+        double haftalikToplamKarbon = Math.Round(haftalikHesaplamalar.Sum(x => x.Karbon), 2);
+
+        // Bugünkü toplam karbon
         double bugunkuKarbon = Math.Round(
-            haftalikHesaplamalar
-                .Where(cc => cc.HesaplamaTarihi >= bugunBaslangici
-                          && cc.HesaplamaTarihi <  bugunBitis)
-                .Sum(cc => cc.KarbonMiktari), 2);
+            haftalikHesaplamalar.Where(x => x.Tarih == bugunUtc).Sum(x => x.Karbon), 2);
 
-        // Bütçe yüzdesi (100'ü geçebilir)
-        double butceYuzdesi = haftalikLimit > 0
-            ? Math.Round((haftalikToplamKarbon / haftalikLimit) * 100.0, 1)
-            : 0.0;
+        // Bütçe yüzdesi ve kalan bütçe
+        double butceYuzdesi = Math.Round((haftalikToplamKarbon / haftalikLimit) * 100.0, 1);
+        double kalanButce = Math.Round(Math.Max(0.0, haftalikLimit - haftalikToplamKarbon), 2);
+        bool butceAsildiMi = haftalikToplamKarbon > haftalikLimit;
 
-        // ── Adım 4: Kullanıcı istatistikleri ──────────────────────
+        // ── Adım 3: Son 7 Günlük Emisyon Trendi (haftalikTrend) ───
+        var haftalikTrend = new List<GunlukEmisyonDto>();
+        double gunlukTahmin = Math.Round(haftalikLimit / 7.0, 2);
+
+        for (int i = 6; i >= 0; i--)
+        {
+            DateTime gunTarihi = bugunUtc.AddDays(-i);
+            string gunAdi = GunKisaAdlari[(int)gunTarihi.DayOfWeek];
+            double miktar = Math.Round(
+                haftalikHesaplamalar.Where(x => x.Tarih == gunTarihi).Sum(x => x.Karbon), 2);
+
+            haftalikTrend.Add(new GunlukEmisyonDto
+            {
+                gun = gunAdi,
+                tarih = gunTarihi.ToString("dd.MM", CultureInfo.InvariantCulture),
+                miktar = miktar,
+                tahmin = gunlukTahmin
+            });
+        }
+
+        // ── Adım 4: Kategori Kırılımı (kategoriDagilimi) ─────────
+        // Aktiviteleri 4 ana gruba ayırıyoruz: Ulaşım, Enerji, Beslenme, Sıfır Atık
+        var kategoriGruplari = new Dictionary<string, (string emoji, string renk, double miktar)>
+        {
+            ["Ulaşım"]     = ("🚗", "#22C55E", 0.0),
+            ["Enerji"]     = ("⚡", "#F59E0B", 0.0),
+            ["Beslenme"]   = ("🥗", "#14B8A6", 0.0),
+            ["Sıfır Atık"] = ("♻️", "#60A5FA", 0.0)
+        };
+
+        foreach (var act in tumKullaniciAktiviteleri)
+        {
+            string katAdi = act.Category?.KategoriAdi ?? "";
+            double karbon = act.CarbonCalculation?.KarbonMiktari ?? 0.0;
+
+            if (katAdi.StartsWith("Ulaşım", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = kategoriGruplari["Ulaşım"];
+                kategoriGruplari["Ulaşım"] = (val.emoji, val.renk, val.miktar + karbon);
+            }
+            else if (katAdi.StartsWith("Enerji", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = kategoriGruplari["Enerji"];
+                kategoriGruplari["Enerji"] = (val.emoji, val.renk, val.miktar + karbon);
+            }
+            else if (katAdi.StartsWith("Beslenme", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = kategoriGruplari["Beslenme"];
+                kategoriGruplari["Beslenme"] = (val.emoji, val.renk, val.miktar + karbon);
+            }
+            else if (katAdi.StartsWith("Atık", StringComparison.OrdinalIgnoreCase) || katAdi.StartsWith("Sıfır Atık", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = kategoriGruplari["Sıfır Atık"];
+                kategoriGruplari["Sıfır Atık"] = (val.emoji, val.renk, val.miktar + karbon);
+            }
+        }
+
+        double toplamKategoriKarbonu = kategoriGruplari.Values.Sum(v => v.miktar);
+
+        var kategoriDagilimi = kategoriGruplari.Select(k => new KategoriKirilimiDto
+        {
+            kategori = k.Key,
+            emoji = k.Value.emoji,
+            renk = k.Value.renk,
+            miktar = Math.Round(k.Value.miktar, 2),
+            yuzde = toplamKategoriKarbonu > 0
+                ? Math.Round((k.Value.miktar / toplamKategoriKarbonu) * 100.0, 1)
+                : 0.0
+        }).ToList();
+
+        // ── Adım 5: Kullanıcı İstatistikleri & Gamification ──────
         var istatistik = await _context.UserStatistics
             .AsNoTracking()
             .FirstOrDefaultAsync(us => us.KullaniciId == kullaniciId);
 
         double toplamTasarruf = istatistik?.ToplamTasarruf ?? 0.0;
-        int    gunlukSeri     = istatistik?.GunlukSeri     ?? 0;
-        string aktifRozet     = istatistik?.RozetAdi       ?? "İlk Adım";
-
-        // EcoPuan hesabı: tasarruf × 10 + seri × 5 (temel formül)
+        int gunlukSeri = istatistik?.GunlukSeri ?? 0;
+        string aktifRozet = istatistik?.RozetAdi ?? "İlk Adım";
         int ecoPuan = (int)Math.Round(toplamTasarruf * 10.0 + gunlukSeri * 5.0);
 
-        // ── Adım 5: En güncel uygulanmamış öneri ──────────────────
+        // ── Adım 6: En güncel henüz uygulanmamış AI önerisi ──────
         var gununOnerisi = await _context.Recommendations
             .AsNoTracking()
             .Where(r => r.KullaniciId == kullaniciId && !r.UygulandiMi)
@@ -97,44 +171,41 @@ public class DashboardController : ControllerBase
             })
             .FirstOrDefaultAsync();
 
-        // ── Adım 6: Son 5 aktivite logu ───────────────────────────
-        var sonAktiviteler = await _context.Activities
-            .AsNoTracking()
-            .Include(a => a.Category)
-            .Include(a => a.CarbonCalculation)
-            .Where(a => a.KullaniciId == kullaniciId)
+        // ── Adım 7: Son 5 aktivite logu ───────────────────────────
+        var sonAktiviteler = tumKullaniciAktiviteleri
             .OrderByDescending(a => a.AktiviteTarihi)
             .Take(5)
             .Select(a => new AktiviteLogDto
             {
                 AktiviteId       = a.AktiviteId,
-                KategoriAdi      = a.Category.KategoriAdi,
-                BirimTipi        = a.Category.BirimTipi,
+                KategoriAdi      = a.Category?.KategoriAdi ?? "Bilinmeyen",
+                BirimTipi        = a.Category?.BirimTipi ?? "",
                 TuketimDegeri    = a.TuketimDegeri,
-                HesaplananKarbon = a.CarbonCalculation != null
-                                   ? a.CarbonCalculation.KarbonMiktari
-                                   : 0.0,
+                HesaplananKarbon = a.CarbonCalculation?.KarbonMiktari ?? 0.0,
                 AktiviteTarihi   = a.AktiviteTarihi,
             })
-            .ToListAsync();
+            .ToList();
 
         _logger.LogInformation(
-            "📊 Dashboard özeti hazırlandı. KullaniciId={Id} | Haftalık={Haftalik} kg | Seri={Seri} gün",
-            kullaniciId, haftalikToplamKarbon, gunlukSeri);
+            "📊 Dinamik Dashboard özeti oluşturuldu. KullaniciId={Id} | Haftalık={Haftalik} kg | Kategori Sayısı={KatCount}",
+            kullaniciId, haftalikToplamKarbon, kategoriDagilimi.Count);
 
-        // ── DashboardSummaryDto oluştur ve dön ─────────────────────
         var summary = new DashboardSummaryDto
         {
-            BugunkuKarbon       = bugunkuKarbon,
+            BugunkuKarbon        = bugunkuKarbon,
             HaftalikToplamKarbon = haftalikToplamKarbon,
-            HaftalikLimit       = haftalikLimit,
-            ButceYuzdesi        = butceYuzdesi,
-            ToplamTasarruf      = toplamTasarruf,
-            GunlukSeri          = gunlukSeri,
-            EcoPuan             = ecoPuan,
-            AktifRozet          = aktifRozet,
-            GununOnerisi        = gununOnerisi,
-            SonAktiviteler      = sonAktiviteler,
+            HaftalikLimit        = haftalikLimit,
+            ButceYuzdesi         = butceYuzdesi,
+            KalanButce           = kalanButce,
+            ButceAsildiMi        = butceAsildiMi,
+            ToplamTasarruf       = toplamTasarruf,
+            GunlukSeri           = gunlukSeri,
+            EcoPuan              = ecoPuan,
+            AktifRozet           = aktifRozet,
+            HaftalikTrend        = haftalikTrend,
+            KategoriDagilimi     = kategoriDagilimi,
+            GununOnerisi         = gununOnerisi,
+            SonAktiviteler       = sonAktiviteler,
         };
 
         return Ok(summary);
@@ -142,11 +213,7 @@ public class DashboardController : ControllerBase
 
     // ═══════════════════════════════════════════════════════════════
     // PUT /api/dashboard/recommendation/{id}/apply
-    // Öneriyi "uygulandı" olarak işaretle
     // ═══════════════════════════════════════════════════════════════
-    /// <summary>
-    /// Bir öneriyi uygulandı olarak işaretler ve tasarruf istatistiğini günceller.
-    /// </summary>
     [HttpPut("recommendation/{id:int}/apply")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -163,7 +230,6 @@ public class DashboardController : ControllerBase
 
         oneri.UygulandiMi = true;
 
-        // Tasarrufu istatistiğe yansıt
         var istatistik = await _context.UserStatistics
             .FirstOrDefaultAsync(us => us.KullaniciId == kullaniciId);
 
@@ -186,11 +252,7 @@ public class DashboardController : ControllerBase
 
     // ═══════════════════════════════════════════════════════════════
     // PUT /api/dashboard/limit
-    // Kullanıcının haftalık karbon limitini güncelle
     // ═══════════════════════════════════════════════════════════════
-    /// <summary>
-    /// Kullanıcının hedeflenen haftalık karbon limitini günceller.
-    /// </summary>
     [HttpPut("limit")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

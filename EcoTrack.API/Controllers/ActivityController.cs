@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using EcoTrack.API.Data;
 using EcoTrack.API.DTOs;
 using EcoTrack.API.Models;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace EcoTrack.API.Controllers;
 
@@ -12,9 +14,10 @@ namespace EcoTrack.API.Controllers;
 public class ActivityController : ControllerBase
 {
     private readonly EcoTrackDbContext _context;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<ActivityController> _logger;
 
-    // ── Fogg B=MAP Kural Motoru: Kategori ID → Öneri kuralı ──────
+    // ── Fogg B=MAP Kural Motoru (Fallback / Yedek Mekanizması) ─────
     private static readonly Dictionary<int, (string Metin, double EtkiSkoru, string PotansiyelTasarruf)> FoggKurallari
         = new()
         {
@@ -56,18 +59,23 @@ public class ActivityController : ControllerBase
          5.0,
          "Aylık ~10-20 kg CO₂e potansiyel tasarruf");
 
-    public ActivityController(EcoTrackDbContext context, ILogger<ActivityController> logger)
+    public ActivityController(
+        EcoTrackDbContext context,
+        IHttpClientFactory httpClientFactory,
+        ILogger<ActivityController> logger)
     {
         _context = context;
+        _httpClientFactory = httpClientFactory;
         _logger  = logger;
     }
 
     // ═══════════════════════════════════════════════════════════════
     // POST /api/activities
-    // Sekans Diyagramı Adım 1-7 tam akış (ExecutionStrategy uyumlu)
+    // Sekans Diyagramı Adım 1-7 tam akış (FastAPI AI entegrasyonlu)
     // ═══════════════════════════════════════════════════════════════
     /// <summary>
-    /// Yeni bir aktivite kaydeder, karbon hesaplar, istatistikleri günceller ve Fogg B=MAP önerisi oluşturur.
+    /// Yeni bir aktivite kaydeder, karbon hesaplar, istatistikleri günceller ve 
+    /// Python/FastAPI mikroservisi üzerinden bağlamsal Fogg B=MAP önerisi oluşturur.
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(ActivityCreatedResponseDto), StatusCodes.Status201Created)]
@@ -91,10 +99,6 @@ public class ActivityController : ControllerBase
         // ── Adım 2: Hesaplama Değerleri ─────────────────────────
         double karbonMiktari = Math.Round(dto.TuketimDegeri * kategori.EmisyonKatsayisi, 4);
         DateTime aktiviteTarihi = dto.AktiviteTarihi?.ToUniversalTime() ?? DateTime.UtcNow;
-
-        var (oneriMetni, etkiSkoru, potansiyel) = FoggKurallari.TryGetValue(dto.KategoriId, out var kural)
-            ? kural
-            : YedekOneri;
 
         ActivityCreatedResponseDto? resultResponse = null;
 
@@ -170,7 +174,16 @@ public class ActivityController : ControllerBase
                 }
                 await _context.SaveChangesAsync();
 
-                // 4. Fogg B=MAP Önerisi Kaydı
+                // 4. FastAPI Mikroservisine Çağrı Yap (veya Fallback)
+                var (oneriMetni, etkiSkoru, potansiyel) = await GetRecommendationFromAiOrFallbackAsync(
+                    dto.KullaniciId,
+                    dto.KategoriId,
+                    kategori.KategoriAdi,
+                    dto.TuketimDegeri,
+                    karbonMiktari,
+                    istatistik.GunlukSeri);
+
+                // 5. Öneriyi Veritabanına Kaydet
                 var oneri = new Recommendation
                 {
                     KullaniciId       = dto.KullaniciId,
@@ -187,8 +200,8 @@ public class ActivityController : ControllerBase
                 await transaction.CommitAsync();
 
                 _logger.LogInformation(
-                    "✅ Aktivite başarıyla kaydedildi. AktiviteId={AktiviteId}, Karbon={Karbon} kg CO₂e",
-                    aktivite.AktiviteId, karbonMiktari);
+                    "✅ Aktivite başarıyla kaydedildi. AktiviteId={AktiviteId}, Karbon={Karbon} kg CO₂e, AI Skor={Skor}",
+                    aktivite.AktiviteId, karbonMiktari, etkiSkoru);
 
                 resultResponse = new ActivityCreatedResponseDto
                 {
@@ -223,12 +236,57 @@ public class ActivityController : ControllerBase
         }
     }
 
+    // ── FastAPI Çağrısı ve Fallback Yardımcı Metodu ─────────────────
+    private async Task<(string Metin, double EtkiSkoru, string Potansiyel)> GetRecommendationFromAiOrFallbackAsync(
+        int kullaniciId,
+        int kategoriId,
+        string kategoriAdi,
+        double tuketimDegeri,
+        double karbonMiktari,
+        int gunlukSeri)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("FastApiClient");
+            var payload = new
+            {
+                kullanici_id   = kullaniciId,
+                kategori_id    = kategoriId,
+                kategori_adi   = kategoriAdi,
+                tuketim_degeri = tuketimDegeri,
+                karbon_miktari = karbonMiktari,
+                gunluk_seri    = gunlukSeri
+            };
+
+            var response = await client.PostAsJsonAsync("/api/recommend", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                var aiResult = await response.Content.ReadFromJsonAsync<AiRecommendationResponse>();
+                if (aiResult != null && !string.IsNullOrWhiteSpace(aiResult.OneriMetni))
+                {
+                    _logger.LogInformation("🤖 FastAPI AI önerisi başarıyla alındı. Model: {Model}", aiResult.ModelSurumu);
+                    return (aiResult.OneriMetni, aiResult.EtkiSkoru, aiResult.PotansiyelTasarruf);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("⚠️ FastAPI yanıt kodu: {Code}. Fallback devreye giriyor.", response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("⚠️ FastAPI mikroservisine bağlanılamadı ({Hata}). Fallback kural motoru devreye giriyor.", ex.Message);
+        }
+
+        // Güvenli Fallback: Yerel kural motoru
+        return FoggKurallari.TryGetValue(kategoriId, out var fallback)
+            ? fallback
+            : YedekOneri;
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // GET /api/activities/recent?kullaniciId=1
     // ═══════════════════════════════════════════════════════════════
-    /// <summary>
-    /// Kullanıcının son 10 aktivitesini kategori adı ve hesaplanan karbon miktarıyla döner.
-    /// </summary>
     [HttpGet("recent")]
     [ProducesResponseType(typeof(IEnumerable<AktiviteLogDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<AktiviteLogDto>>> GetRecentActivities(
@@ -259,9 +317,6 @@ public class ActivityController : ControllerBase
     // ═══════════════════════════════════════════════════════════════
     // DELETE /api/activities/{id}
     // ═══════════════════════════════════════════════════════════════
-    /// <summary>
-    /// Belirtilen aktiviteyi ve bağlı hesaplamayı siler (Cascade).
-    /// </summary>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -279,4 +334,20 @@ public class ActivityController : ControllerBase
         _logger.LogInformation("🗑️ Aktivite silindi. AktiviteId={Id}", id);
         return NoContent();
     }
+}
+
+// ── FastAPI Response Model ───────────────────────────────────────
+internal class AiRecommendationResponse
+{
+    [JsonPropertyName("oneri_metni")]
+    public string OneriMetni { get; set; } = string.Empty;
+
+    [JsonPropertyName("etki_skoru")]
+    public double EtkiSkoru { get; set; }
+
+    [JsonPropertyName("potansiyel_tasarruf")]
+    public string PotansiyelTasarruf { get; set; } = string.Empty;
+
+    [JsonPropertyName("model_surumu")]
+    public string ModelSurumu { get; set; } = string.Empty;
 }

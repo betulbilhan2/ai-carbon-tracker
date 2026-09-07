@@ -1,13 +1,15 @@
 import { USER_RANK_BY_SCOPE } from './leaderboardData';
 
-const ECO_SCORE    = 847;
-const WEEKLY_GAIN  = 124;
-const NEXT_TIER    = 900;   // threshold for top-10%
-const PROGRESS_PCT = Math.round((ECO_SCORE / NEXT_TIER) * 100); // 94% — cap to 82 for drama
+export default function UserRankBanner({ scope = 'university', userRank = null, userScore = null, totalUsers = null }) {
+  const fallback = USER_RANK_BY_SCOPE[scope] ?? { rank: 14, total: 847 };
 
-export default function UserRankBanner({ scope }) {
-  const { rank, total } = USER_RANK_BY_SCOPE[scope] ?? { rank: 14, total: 847 };
-  const ptsLeft = NEXT_TIER - ECO_SCORE;
+  const currentRank  = userRank  ?? fallback.rank;
+  const currentScore = userScore ?? 847;
+  const totalCount   = totalUsers ?? fallback.total;
+
+  const nextTierThreshold = Math.ceil((currentScore + 50) / 100) * 100;
+  const ptsLeft = Math.max(0, nextTierThreshold - currentScore);
+  const progressPct = Math.min(100, Math.round(((currentScore % 100) / 100) * 100) || 82);
 
   return (
     <div
@@ -28,10 +30,10 @@ export default function UserRankBanner({ scope }) {
             className="font-mono font-extrabold leading-none"
             style={{ fontSize: 44, color: '#22C55E' }}
           >
-            #{rank}
+            #{currentRank}
           </p>
           <p className="text-xs mt-0.5" style={{ color: '#4B6E5E' }}>
-            / {total.toLocaleString('tr-TR')}
+            / {totalCount.toLocaleString('tr-TR')}
           </p>
         </div>
 
@@ -68,13 +70,13 @@ export default function UserRankBanner({ scope }) {
             className="font-mono text-2xl font-extrabold"
             style={{ color: '#14B8A6' }}
           >
-            {ECO_SCORE.toLocaleString('tr-TR')} pts
+            {currentScore.toLocaleString('tr-TR')} pts
           </p>
           <span
             className="inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-xs font-bold mt-1"
             style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}
           >
-            ↑ +{WEEKLY_GAIN} bu hafta
+            ↑ Canlı Sıralama
           </span>
         </div>
       </div>
@@ -83,7 +85,7 @@ export default function UserRankBanner({ scope }) {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-xs font-medium" style={{ color: '#4B6E5E' }}>
-            Bir sonraki eşik: İlk %10'luk Dilim
+            Bir sonraki başarı rozetine kalan etki puanı
           </p>
           <p className="text-xs font-mono" style={{ color: '#22C55E' }}>
             {ptsLeft} puan kaldı
@@ -96,14 +98,15 @@ export default function UserRankBanner({ scope }) {
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{
-              width: '82%',
+              width: `${progressPct}%`,
               background: 'linear-gradient(90deg, #22C55E, #14B8A6)',
             }}
           />
         </div>
-        <p className="text-xs mt-1.5" style={{ color: '#4B6E5E' }}>
-          {ECO_SCORE} / {NEXT_TIER} puan
-        </p>
+        <div className="flex justify-between text-xs mt-1.5" style={{ color: '#4B6E5E' }}>
+          <span>{currentScore} pts</span>
+          <span>Hedef: {nextTierThreshold} pts</span>
+        </div>
       </div>
     </div>
   );

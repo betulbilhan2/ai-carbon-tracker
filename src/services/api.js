@@ -1,7 +1,8 @@
 // ── Merkezi API İstemcisi ─────────────────────────────────────────
 // Tüm backend iletişimi bu dosya üzerinden yönetilir.
 
-const BASE_URL = 'http://localhost:5284/api';
+export const BASE_URL = 'http://localhost:5284/api';
+export const API_BASE_URL = BASE_URL;
 
 // ── Yardımcı: ortak fetch ─────────────────────────────────────────
 async function apiFetch(path, options = {}) {
@@ -83,4 +84,12 @@ export async function updateWeeklyLimit(yeniLimit, kullaniciId = 1) {
   return apiFetch(`/Dashboard/limit?kullaniciId=${kullaniciId}&yeniLimit=${yeniLimit}`, {
     method: 'PUT',
   });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Liderlik Tablosu
+// GET /api/Leaderboard
+// ─────────────────────────────────────────────────────────────────
+export async function getLeaderboard() {
+  return apiFetch('/Leaderboard');
 }
