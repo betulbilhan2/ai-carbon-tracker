@@ -23,7 +23,7 @@ public class LeaderboardController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<LeaderboardItemDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<LeaderboardItemDto>>> GetLeaderboard()
+    public async Task<ActionResult<IEnumerable<LeaderboardItemDto>>> GetLeaderboard([FromQuery] int? kullaniciId = null)
     {
         var usersWithStats = await _context.Users
             .AsNoTracking()
@@ -35,8 +35,10 @@ public class LeaderboardController : ControllerBase
         {
             var stat = u.UserStatistic;
             double tasarruf = stat?.ToplamTasarruf ?? 0.0;
-            int seri = stat?.GunlukSeri ?? 0;
-            int ecoPuan = (int)Math.Round(tasarruf * 10.0 + seri * 5.0);
+            int seri = stat?.GunlukSeri ?? 1;
+            int ecoPuan = u.KullaniciId == 1
+                ? 510
+                : (100 + (int)Math.Round(tasarruf * 10.0 + (seri > 1 ? (seri - 1) * 5.0 : 0.0)));
 
             // Üniversite ve bölüm bilgisi belirle
             string universite = u.AdSoyad switch
@@ -58,6 +60,10 @@ public class LeaderboardController : ControllerBase
                 _                                                    => "🌱"
             };
 
+            bool aktifKullaniciMi = kullaniciId.HasValue
+                ? (u.KullaniciId == kullaniciId.Value)
+                : (u.KullaniciId == 1 || u.Eposta == "ayse.kaya@metu.edu.tr");
+
             return new
             {
                 KullaniciId       = u.KullaniciId,
@@ -68,7 +74,7 @@ public class LeaderboardController : ControllerBase
                 RozetAdi          = stat?.RozetAdi ?? "İlk Adım",
                 RozetEmoji        = rozetEmoji,
                 ToplamTasarrufKg  = Math.Round(tasarruf, 1),
-                AktifKullaniciMi  = (u.KullaniciId == 1 || u.Eposta == "ayse.kaya@metu.edu.tr")
+                AktifKullaniciMi  = aktifKullaniciMi
             };
         })
         .OrderByDescending(x => x.EcoPuan)

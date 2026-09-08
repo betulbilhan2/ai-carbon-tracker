@@ -7,9 +7,17 @@ export const API_BASE_URL = BASE_URL;
 // ── Yardımcı: ortak fetch ─────────────────────────────────────────
 async function apiFetch(path, options = {}) {
   const url = `${BASE_URL}${path}`;
+  const token = localStorage.getItem('ecotrack_token');
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
+    headers,
   });
 
   // Yanıt gövdesi her zaman JSON olmayabilir (204 No Content vb.)
@@ -63,16 +71,9 @@ export async function getRecentActivities(kullaniciId = 1) {
 // DELETE /api/activities/{id}
 // ─────────────────────────────────────────────────────────────────
 export const deleteActivity = async (id) => {
-  const res = await fetch(`${BASE_URL}/activities/${id}`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" }
+  return apiFetch(`/activities/${id}`, {
+    method: 'DELETE',
   });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || "Silme işlemi başarısız");
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : { message: "Aktivite silindi" };
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -125,8 +126,9 @@ export async function addUserPoints(kullaniciId = 1, puan = 50) {
 // Liderlik Tablosu
 // GET /api/Leaderboard
 // ─────────────────────────────────────────────────────────────────
-export async function getLeaderboard() {
-  return apiFetch('/Leaderboard');
+export async function getLeaderboard(kullaniciId = null) {
+  const query = kullaniciId ? `?kullaniciId=${kullaniciId}` : '';
+  return apiFetch(`/Leaderboard${query}`);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -153,3 +155,54 @@ export async function simulateScenario(scenarioData) {
     }),
   });
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Kullanıcı Giriş & Kayıt (Auth)
+// ─────────────────────────────────────────────────────────────────
+export async function loginUser(credentials) {
+  return apiFetch('/Auth/login', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: credentials.email,
+      password: credentials.password,
+    }),
+  });
+}
+
+export async function registerUser(userData) {
+  return apiFetch('/Auth/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      adSoyad: userData.adSoyad,
+      email: userData.email,
+      password: userData.password || userData.sifre,
+      sifre: userData.sifre || userData.password,
+      universite: userData.universite || 'ODTÜ',
+      bolum: userData.bolum || 'Bilgisayar Mühendisliği',
+      sehir: userData.sehir || 'Ankara',
+      hedeflenenKarbonLimiti: Number(userData.hedeflenenKarbonLimiti || userData.haftalikHedef) || 56.0,
+      haftalikHedef: Number(userData.haftalikHedef || userData.hedeflenenKarbonLimiti) || 56.0,
+    }),
+  });
+}
+
+export async function getCurrentUser() {
+  return apiFetch('/Auth/me');
+}
+
+export async function updateProfile(formData) {
+  return apiFetch('/Auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify({
+      id: formData.id ?? formData.kullaniciId ?? formData.kullanici_id,
+      adSoyad: formData.adSoyad ?? formData.ad_soyad ?? formData.name,
+      universite: formData.universite ?? formData.university,
+      bolum: formData.bolum ?? formData.department,
+      sehir: formData.sehir ?? formData.city,
+      birincilUlasim: formData.birincilUlasim ?? formData.birincil_ulasim ?? formData.transport,
+      diyetTuru: formData.diyetTuru ?? formData.diyet_turu ?? formData.diet,
+      hedeflenenKarbonLimiti: formData.hedeflenenKarbonLimiti ? Number(formData.hedeflenenKarbonLimiti) : undefined,
+    }),
+  });
+}
+

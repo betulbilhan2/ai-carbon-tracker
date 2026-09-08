@@ -1,16 +1,30 @@
 import { USER_RANK_BY_SCOPE } from './leaderboardData';
+import { useAuth } from '../../context/AuthContext';
+
+function getInitials(name) {
+  if (!name) return 'U';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export default function UserRankBanner({ scope = 'university', userRank = null, userScore = null, totalUsers = null }) {
+  const { user } = useAuth();
   const scopeMeta = USER_RANK_BY_SCOPE[scope] ?? { rank: 2, total: 5 };
 
+  const fullName = user?.ad_soyad || user?.adSoyad || 'Kullanıcı';
+  const universite = user?.universite || '';
+  const bolum = user?.bolum || '';
+  const institutionText = [universite, bolum].filter(Boolean).join(' · ');
+
   // Üniversite kapsamında canlı veri varsa onu kullan, diğer kapsamlarda (Şehir, TR) kapsam istatistiğini göster
-  const currentRank  = (scope === 'university' && userRank) ? userRank : scopeMeta.rank;
-  const currentScore = userScore ?? 510;
-  const totalCount   = (scope === 'university' && totalUsers) ? totalUsers : scopeMeta.total;
+  const currentRank  = (scope === 'university' && userRank) ? userRank : (userRank ?? scopeMeta.rank);
+  const currentScore = userScore ?? (user?.ecoScore ?? user?.ecoPuan ?? 100);
+  const totalCount   = (scope === 'university' && totalUsers) ? totalUsers : (totalUsers ?? scopeMeta.total);
 
   const nextTierThreshold = Math.ceil((currentScore + 50) / 100) * 100;
   const ptsLeft = Math.max(0, nextTierThreshold - currentScore);
-  const progressPct = Math.min(100, Math.round(((currentScore % 100) / 100) * 100) || 82);
+  const progressPct = Math.min(100, Math.round(((currentScore % 100) / 100) * 100) || 50);
 
   return (
     <div
@@ -53,15 +67,17 @@ export default function UserRankBanner({ scope = 'university', userRank = null, 
               boxShadow: '0 0 16px rgba(34,197,94,0.3)',
             }}
           >
-            AY
+            {getInitials(fullName)}
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-base truncate" style={{ color: '#F0FDF4' }}>
-              Ayşe Kaya
+              {fullName}
             </p>
-            <p className="text-xs truncate" style={{ color: '#4B6E5E' }}>
-              ODTÜ · Bilgisayar Mühendisliği
-            </p>
+            {institutionText && (
+              <p className="text-xs truncate" style={{ color: '#4B6E5E' }}>
+                {institutionText}
+              </p>
+            )}
           </div>
         </div>
 

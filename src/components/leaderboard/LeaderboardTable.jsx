@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { MOCK_DATA } from './leaderboardData';
+import { useAuth } from '../../context/AuthContext';
 
 const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
@@ -23,21 +24,61 @@ function avatarColor(name) {
 }
 
 export default function LeaderboardTable({ scope = 'university', liveData = null }) {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
+
+  const currentUserId = user?.kullaniciId ?? user?.kullanici_id;
+  const currentUserName = (user?.ad_soyad || user?.adSoyad || '').trim().toLowerCase();
+  const currentUserEmail = (user?.email || user?.eposta || '').trim().toLowerCase();
+
+  const checkIfUser = (item) => {
+    if (currentUserId && (item.kullaniciId === currentUserId || item.id === currentUserId)) {
+      return true;
+    }
+    if (currentUserEmail && item.email && item.email.toLowerCase() === currentUserEmail) {
+      return true;
+    }
+    const rowName = (item.adSoyad || item.name || '').trim().toLowerCase();
+    if (currentUserName && rowName && rowName === currentUserName) {
+      return true;
+    }
+    return false;
+  };
 
   // Eğer scope 'university' ve canlı API verisi varsa kullan,
   // Şehir veya Türkiye geneli seçildiğinde ilgili kapsama ait zenginleştirilmiş sıralamayı göster
-  const rows = (scope === 'university' && liveData && liveData.length > 0)
+  const baseRows = (scope === 'university' && liveData && liveData.length > 0)
     ? liveData.map(item => ({
         rank:         item.siraNo,
+        kullaniciId:  item.kullaniciId,
         name:         item.adSoyad,
         institution:  item.universite,
         score:        item.ecoPuan,
         weeklyChange: item.haftalikDegisim ?? +18,
         badge:        item.rozetEmoji || '🌱',
-        isUser:       item.aktifKullaniciMi ?? false,
+        isUser:       checkIfUser(item),
       }))
-    : (MOCK_DATA[scope] ?? MOCK_DATA.university);
+    : (MOCK_DATA[scope] ?? MOCK_DATA.university).map(item => ({
+        ...item,
+        isUser: checkIfUser(item),
+      }));
+
+  // Eğer kullanıcı listede bulunmuyorsa (farklı isimde yeni kayıtlı kullanıcı vb.), kullanıcının kendi satırını ekle
+  const hasUser = baseRows.some(r => r.isUser);
+  const rows = [...baseRows];
+  if (!hasUser && user) {
+    const userRankNum = rows.length + 1;
+    rows.push({
+      rank:         userRankNum,
+      kullaniciId:  currentUserId,
+      name:         user.ad_soyad || user.adSoyad || 'Kullanıcı',
+      institution:  [user.universite, user.bolum].filter(Boolean).join(' · ') || 'Kampüsüm',
+      score:        user.ecoScore ?? user.ecoPuan ?? 100,
+      weeklyChange: +15,
+      badge:        '🌱',
+      isUser:       true,
+    });
+  }
 
   const top10   = rows.filter(r => !r.isUser || r.rank <= 10).slice(0, 10);
   const userRow = rows.find(r => r.isUser);
@@ -57,6 +98,9 @@ export default function LeaderboardTable({ scope = 'university', liveData = null
     const weeklyPrefix = weekly > 0 ? '+' : '';
 
     const color = avatarColor(row.name);
+
+    const currentUserNameDisplay = isUser ? (user?.ad_soyad || user?.adSoyad || row.name) : row.name;
+    const currentUserInstitution = [user?.universite, user?.bolum].filter(Boolean).join(' · ');
 
     return (
       <tr
@@ -89,13 +133,13 @@ export default function LeaderboardTable({ scope = 'university', liveData = null
               className="flex items-center justify-center rounded-full text-xs font-bold shrink-0"
               style={{ width: 32, height: 32, backgroundColor: color, color: '#0A0F0D' }}
             >
-              {initials(row.name)}
+              {initials(currentUserNameDisplay)}
             </div>
             <span
               className="text-sm font-medium"
               style={{ color: isUser ? '#22C55E' : '#F0FDF4' }}
             >
-              {row.name}
+              {currentUserNameDisplay}
               {isUser && (
                 <span
                   className="ml-2 text-xs rounded-full px-2 py-0.5 font-semibold"
@@ -109,8 +153,8 @@ export default function LeaderboardTable({ scope = 'university', liveData = null
         </td>
 
         {/* Institution */}
-        <td className="px-5 py-3.5 text-xs" style={{ color: '#4B6E5E' }}>
-          {row.institution}
+        <td className="px-5 py-3.5 text-xs" style={{ color: isUser ? '#86EFAC' : '#4B6E5E' }}>
+          {isUser && currentUserInstitution ? currentUserInstitution : row.institution}
         </td>
 
         {/* Score */}

@@ -31,6 +31,26 @@ public class EcoTrackDbContext : DbContext
             entity.Property(u => u.HedeflenenKarbonLimiti)
                   .HasDefaultValue(56.0);
 
+            entity.Property(u => u.Sehir)
+                  .HasMaxLength(100)
+                  .HasDefaultValue("Ankara");
+
+            entity.Property(u => u.Universite)
+                  .HasMaxLength(150)
+                  .HasDefaultValue("ODTÜ");
+
+            entity.Property(u => u.Bolum)
+                  .HasMaxLength(150)
+                  .HasDefaultValue("Bilgisayar Mühendisliği");
+
+            entity.Property(u => u.BirincilUlasim)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("Özel Araç");
+
+            entity.Property(u => u.DiyetTuru)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("Az Etli (Flexitarian)");
+
             entity.Property(u => u.KayitTarihi)
                   .HasDefaultValueSql("now() at time zone 'utc'");
         });

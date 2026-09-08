@@ -16,6 +16,7 @@ import {
   getCategories,
   deleteActivity,
 } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 // ── Kategori adı → backend kategori_id map ────────────────────────
 // Frontend string ID'lerini backend integer kategori_id'ye çevirir.
@@ -179,6 +180,8 @@ function backendLogToRow(item) {
 
 // ── Ana Sayfa ─────────────────────────────────────────────────────
 export default function ActivityPage({ onActivitySaved, initialCategory = 'transport' }) {
+  const { user } = useAuth();
+  const currentUserId = user?.kullaniciId || 1;
   const [category,  setCategory]  = useState(initialCategory);
   const [formData,  setFormData]  = useState(defaultForm());
   const [logs,      setLogs]      = useState([]);
@@ -191,11 +194,11 @@ export default function ActivityPage({ onActivitySaved, initialCategory = 'trans
   // ── İlk yüklemede son aktiviteleri backend'den çek ───────────────
   useEffect(() => {
     setLogsLoading(true);
-    getRecentActivities(1)
+    getRecentActivities(currentUserId)
       .then(data => setLogs((data ?? []).map(backendLogToRow)))
       .catch(() => setLogs([]))   // API yoksa boş liste göster
       .finally(() => setLogsLoading(false));
-  }, []);
+  }, [currentUserId]);
 
   // Kategori değişince formu sıfırla
   function handleCategoryChange(cat) {
@@ -220,7 +223,7 @@ export default function ActivityPage({ onActivitySaved, initialCategory = 'trans
     try {
       // Backend'e aktivite gönder
       const result = await createActivity({
-        kullaniciId:    1,
+        kullaniciId:    currentUserId,
         kategoriId,
         tuketimDegeri,
         aktiviteTarihi: formData.datetime

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Navbar          from './components/layout/Navbar';
 import SettingsModal   from './components/settings/SettingsModal';
@@ -7,22 +7,69 @@ import AnalyticsPage   from './pages/AnalyticsPage';
 import ActivityPage    from './pages/ActivityPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import PlaceholderScreen from './components/common/PlaceholderScreen';
-import { Settings } from 'lucide-react';
+import LoginPage       from './pages/LoginPage';
+import RegisterPage    from './pages/RegisterPage';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { updateWeeklyTarget, getDashboardSummary } from './services/api';
+import { Settings, Leaf } from 'lucide-react';
 
-// ── Central App State ─────────────────────────────────────────────
-export default function App() {
+function AppContent() {
+  const { user, isAuthenticated, loading } = useAuth();
+  const [authView, setAuthView] = useState('login'); // 'login' | 'register'
+
   const [activeTab,      setActiveTab]      = useState('overview');
-  const [ecoScore,       setEcoScore]       = useState(847);
-  const [streak,         setStreak]         = useState(12);
+  const [ecoScore,       setEcoScore]       = useState(100);
+  const [streak,         setStreak]         = useState(1);
   const [taskDone,       setTaskDone]       = useState(false);
-  const [totalSavedKg,   setTotalSavedKg]   = useState(18.4);
+  const [totalSavedKg,   setTotalSavedKg]   = useState(0.0);
   const [weeklyLimit,    setWeeklyLimit]    = useState(56);
+  const [weeklyUsed,     setWeeklyUsed]     = useState(0.0);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab,    setSettingsTab]    = useState('budget');
+  const [selectedCategory, setSelectedCategory] = useState('transport');
+
+  // Kullanıcı giriş yaptığında veya profil yüklendiğinde hedeflenen bütçeyi ve istatistikleri senkronize et
+  useEffect(() => {
+    if (user) {
+      const limit = Number(user.haftalik_hedef ?? user.hedeflenenKarbonLimiti ?? 56);
+      const score = Number(user.ecoScore ?? user.ecoPuan ?? (user.kullaniciId === 1 ? 847 : 100));
+      const s = Number(user.streak ?? user.gunlukSeri ?? (user.kullaniciId === 1 ? 12 : 1));
+      const used = Number(user.haftalik_emisyon ?? user.haftalikToplamKarbon ?? (user.kullaniciId === 1 ? 34.2 : 0.0));
+
+      setWeeklyLimit(limit);
+      setEcoScore(score);
+      setStreak(s);
+      setWeeklyUsed(used);
+
+      const userId = user.kullaniciId || user.kullanici_id;
+      if (userId) {
+        getDashboardSummary(userId)
+          .then(summary => {
+            if (summary) {
+              if (typeof summary.haftalikToplamKarbon === 'number') {
+                setWeeklyUsed(summary.haftalikToplamKarbon);
+              }
+              if (typeof summary.haftalikLimit === 'number') {
+                setWeeklyLimit(summary.haftalikLimit);
+              }
+              if (typeof summary.ecoPuan === 'number') {
+                setEcoScore(summary.ecoPuan);
+              }
+              if (typeof summary.gunlukSeri === 'number') {
+                setStreak(summary.gunlukSeri);
+              }
+              if (typeof summary.toplamTasarruf === 'number') {
+                setTotalSavedKg(summary.toplamTasarruf);
+              }
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [user]);
 
   // ── Handlers ────────────────────────────────────────────────────
   function handleTaskComplete() {
-    if (taskDone) return;
     setTaskDone(true);
     setEcoScore(prev => prev + 50);
     setStreak(prev => prev + 1);
@@ -32,6 +79,7 @@ export default function App() {
     const pts = Math.max(5, Math.round(10 - kg * 0.5));
     setEcoScore(prev => prev + pts);
     setTotalSavedKg(prev => +(prev + kg * 0.05).toFixed(1));
+    setWeeklyUsed(prev => +(prev + kg).toFixed(1));
   }
 
   function openSettings(tab = 'budget') {
@@ -42,14 +90,13 @@ export default function App() {
   async function handleSettingsSave({ weeklyLimit: newLimit }) {
     setWeeklyLimit(newLimit);
     try {
-      await updateWeeklyTarget(1, newLimit);
+      const userId = user?.kullaniciId || 1;
+      await updateWeeklyTarget(userId, newLimit);
       console.log('✅ Haftalık karbon hedefi veritabanında güncellendi:', newLimit);
     } catch (err) {
       console.error('Haftalık hedef güncellenirken hata:', err);
     }
   }
-
-  const [selectedCategory, setSelectedCategory] = useState('transport');
 
   function handleNavigateActivity(category = 'transport') {
     setSelectedCategory(category);
@@ -58,6 +105,34 @@ export default function App() {
 
   function handleNavigateLeaderboard() {
     setActiveTab('leaderboard');
+  }
+
+  // ── Yükleniyor Ekranı ────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ backgroundColor: '#0A0F0D' }}>
+        <div
+          className="flex items-center justify-center rounded-2xl p-4 mb-3 animate-pulse"
+          style={{
+            backgroundColor: 'rgba(34,197,94,0.12)',
+            border: '1px solid rgba(34,197,94,0.3)',
+          }}
+        >
+          <Leaf size={32} color="#22C55E" />
+        </div>
+        <p className="text-sm font-medium text-emerald-400 font-mono animate-pulse">
+          EcoTrack AI başlatılıyor...
+        </p>
+      </div>
+    );
+  }
+
+  // ── Kimlik Doğrulama Ekranları (Login / Register) ─────────────────
+  if (!isAuthenticated) {
+    if (authView === 'register') {
+      return <RegisterPage onNavigateLogin={() => setAuthView('login')} />;
+    }
+    return <LoginPage onNavigateRegister={() => setAuthView('register')} />;
   }
 
   // ── Page router ──────────────────────────────────────────────────
@@ -110,6 +185,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         weeklyLimit={weeklyLimit}
+        weeklyUsed={weeklyUsed}
         ecoScore={ecoScore}
         onOpenSettings={() => openSettings('budget')}
         onOpenBudget={() => openSettings('budget')}
@@ -151,5 +227,13 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

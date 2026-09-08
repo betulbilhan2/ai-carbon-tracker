@@ -24,6 +24,32 @@ builder.Services.AddSwaggerGen(options =>
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
         options.IncludeXmlComments(xmlPath);
+
+    // JWT Bearer yetkilendirmesi Swagger arayüzüne ekleniyor
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "JWT Authorization başlığı. Örnek kullanım: 'Bearer {token}'"
+    });
+
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 // ── 2. PostgreSQL (Supabase) — EF Core ────────────────────────────
@@ -55,6 +81,35 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ── 3.1 JWT Authentication ───────────────────────────────────────────
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "EcoTrackAI_Teknofest2026_SecureSuperSecretJwtSigningKey_1003737!";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "EcoTrackAPI";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "EcoTrackClient";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtKey)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
+
 // ── 4. Build ───────────────────────────────────────────────────────
 var app = builder.Build();
 
@@ -78,6 +133,7 @@ app.UseRouting();
 // CORS middleware
 app.UseCors("AllowAll");
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
@@ -94,6 +150,22 @@ using (var scope = app.Services.CreateScope())
         if (canConnect)
         {
             logger.LogInformation("✅ PostgreSQL (Supabase) bağlantısı başarılı.");
+
+            // Profil kolonlarını Supabase kullanicilar tablosunda garantiye al
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE kullanicilar ADD COLUMN IF NOT EXISTS sehir VARCHAR(100) DEFAULT 'Ankara';
+                    ALTER TABLE kullanicilar ADD COLUMN IF NOT EXISTS universite VARCHAR(150) DEFAULT 'ODTÜ';
+                    ALTER TABLE kullanicilar ADD COLUMN IF NOT EXISTS bolum VARCHAR(150) DEFAULT 'Bilgisayar Mühendisliği';
+                    ALTER TABLE kullanicilar ADD COLUMN IF NOT EXISTS birincil_ulasim VARCHAR(50) DEFAULT 'Özel Araç';
+                    ALTER TABLE kullanicilar ADD COLUMN IF NOT EXISTS diyet_turu VARCHAR(50) DEFAULT 'Az Etli (Flexitarian)';
+                ");
+            }
+            catch (Exception colEx)
+            {
+                logger.LogWarning(colEx, "Kullanıcı tablosu kolonları kontrol edilirken uyarı.");
+            }
 
             // 1. Kullanıcı Seeder (Ayşe Kaya - ID 1)
             var existingUser = await db.Users.FirstOrDefaultAsync(u => u.KullaniciId == 1 || u.Eposta == "ayse.kaya@metu.edu.tr");

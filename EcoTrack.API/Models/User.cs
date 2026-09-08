@@ -29,6 +29,26 @@ public class User
     [Column("hedeflenen_karbon_limiti")]
     public double HedeflenenKarbonLimiti { get; set; } = 56.0;
 
+    [Column("sehir")]
+    [MaxLength(100)]
+    public string? Sehir { get; set; } = "Ankara";
+
+    [Column("universite")]
+    [MaxLength(150)]
+    public string? Universite { get; set; } = "ODTÜ";
+
+    [Column("bolum")]
+    [MaxLength(150)]
+    public string? Bolum { get; set; } = "Bilgisayar Mühendisliği";
+
+    [Column("birincil_ulasim")]
+    [MaxLength(50)]
+    public string? BirincilUlasim { get; set; } = "Özel Araç";
+
+    [Column("diyet_turu")]
+    [MaxLength(50)]
+    public string? DiyetTuru { get; set; } = "Az Etli (Flexitarian)";
+
     [Column("kayit_tarihi")]
     public DateTime KayitTarihi { get; set; } = DateTime.UtcNow;
 

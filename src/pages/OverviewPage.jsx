@@ -5,6 +5,7 @@ import CategoryDonutChart from '../components/dashboard/CategoryDonutChart';
 import AiMicroTaskCard    from '../components/dashboard/AiMicroTaskCard';
 import QuickLogger        from '../components/dashboard/QuickLogger';
 import { getDashboardSummary, applyRecommendation } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function OverviewPage({ 
   onTaskComplete, 
@@ -13,13 +14,15 @@ export default function OverviewPage({
   weeklyLimit = 56,
   ecoScore
 }) {
+  const { user } = useAuth();
+  const userId = user?.kullaniciId || 1;
   const [summary,  setSummary]  = useState(null);
   const [loading,  setLoading]  = useState(true);
 
   // Dashboard özetini backend'den çek
   const fetchSummary = useCallback(async () => {
     try {
-      const data = await getDashboardSummary(1);
+      const data = await getDashboardSummary(userId);
       setSummary(data);
     } catch {
       // API geçici olarak ulaşılamazsa null kalır, bileşenler varsayılan değerleri kullanır
@@ -27,7 +30,7 @@ export default function OverviewPage({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchSummary();
@@ -36,7 +39,7 @@ export default function OverviewPage({
   // "Kabul Et" butonuna basıldığında öneriyi backend'de uygula
   async function handleApplyRecommendation(oneriId) {
     try {
-      await applyRecommendation(oneriId, 1);
+      await applyRecommendation(oneriId, userId);
       await fetchSummary(); // Güncel istatistikleri ve yeni öneriyi getir
       onTaskComplete?.(50);
     } catch (err) {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Leaf, Search, Bell, Settings, ChevronRight, X } from 'lucide-react';
+import { Leaf, Search, Bell, Settings, ChevronRight, X, LogOut, User as UserIcon } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const NAV_TABS = [
   { id: 'overview',    label: 'Ana Sayfa'           },
@@ -8,21 +9,36 @@ const NAV_TABS = [
   { id: 'leaderboard',label: 'Liderlik Tablosu'     },
 ];
 
-const WEEKLY_USED  = 34.2;
-
 export default function Navbar({
   activeTab,
   onTabChange,
   weeklyLimit,
+  weeklyUsed,
   ecoScore,
   onOpenSettings,
   onOpenBudget,
 }) {
+  const { user, logout } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
-  const pct = Math.min(100, Math.round((WEEKLY_USED / weeklyLimit) * 100));
+  const profileRef = useRef(null);
+
+  const effectiveLimit = weeklyLimit ?? user?.haftalik_hedef ?? user?.hedeflenenKarbonLimiti ?? 56;
+  const effectiveUsed = typeof weeklyUsed === 'number'
+    ? weeklyUsed
+    : (user?.haftalik_emisyon ?? user?.haftalikToplamKarbon ?? 0.0);
+  const pct = Math.min(100, Math.round(((effectiveUsed || 0) / (effectiveLimit || 1)) * 100));
+
+  const displayName = user?.ad_soyad || user?.adSoyad || 'Ayşe Kaya';
+  const getInitials = (name) => {
+    if (!name) return 'AK';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
   // Global Ctrl + K listener
   useEffect(() => {
@@ -46,6 +62,18 @@ export default function Navbar({
       setSearchQuery('');
     }
   }, [searchOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    if (profileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileOpen]);
 
   return (
     <header
@@ -122,8 +150,8 @@ export default function Navbar({
           {/* Text + bar */}
           <div>
             <p className="text-xs font-mono" style={{ color: '#86EFAC' }}>
-              <span className="font-bold">{WEEKLY_USED}</span>
-              <span style={{ color: '#4B6E5E' }}> / {weeklyLimit} kg CO₂e</span>
+              <span className="font-bold">{(effectiveUsed || 0).toFixed(1)}</span>
+              <span style={{ color: '#4B6E5E' }}> / {effectiveLimit} kg CO₂e</span>
             </p>
             {/* Mini progress bar */}
             <div
@@ -293,29 +321,135 @@ export default function Navbar({
           <Settings size={15} color="#4B6E5E" />
         </button>
 
-        {/* User avatar */}
-        <button
-          onClick={onOpenSettings}
-          className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 transition-all"
-          style={{ backgroundColor: '#111816', border: '1px solid #1E3A30' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = '#22C55E')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E3A30')}
-        >
-          <div
-            className="flex items-center justify-center rounded-full text-xs font-bold"
+        {/* User avatar & dropdown */}
+        <div className="relative" ref={profileRef}>
+          <button
+            type="button"
+            onClick={() => setProfileOpen(v => !v)}
+            className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 transition-all cursor-pointer"
             style={{
-              width: '26px',
-              height: '26px',
-              backgroundColor: '#22C55E',
-              color: '#0A0F0D',
+              backgroundColor: profileOpen ? 'rgba(34,197,94,0.15)' : '#111816',
+              border: `1px solid ${profileOpen ? '#22C55E' : '#1E3A30'}`,
             }}
+            onMouseEnter={e => { if (!profileOpen) e.currentTarget.style.borderColor = '#22C55E'; }}
+            onMouseLeave={e => { if (!profileOpen) e.currentTarget.style.borderColor = '#1E3A30'; }}
           >
-            AY
-          </div>
-          <span className="text-sm font-medium" style={{ color: '#F0FDF4' }}>
-            Ayşe Kaya
-          </span>
-        </button>
+            <div
+              className="flex items-center justify-center rounded-full text-xs font-bold shrink-0"
+              style={{
+                width: '26px',
+                height: '26px',
+                backgroundColor: '#22C55E',
+                color: '#0A0F0D',
+              }}
+            >
+              {getInitials(displayName)}
+            </div>
+            <span className="text-sm font-medium" style={{ color: '#F0FDF4' }}>
+              {displayName}
+            </span>
+          </button>
+
+          {/* Profile Dropdown */}
+          {profileOpen && (
+            <div
+              className="absolute right-0 mt-2 w-72 rounded-2xl p-4 shadow-2xl z-50 animate-fade-in"
+              style={{
+                backgroundColor: '#111816',
+                border: '1px solid #1E3A30',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(34,197,94,0.1)',
+              }}
+            >
+              {/* User details header */}
+              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-[#1E3A30]">
+                <div
+                  className="flex items-center justify-center rounded-xl text-sm font-bold shrink-0"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: 'rgba(34,197,94,0.15)',
+                    border: '1px solid rgba(34,197,94,0.3)',
+                    color: '#22C55E',
+                  }}
+                >
+                  {getInitials(displayName)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-zinc-100 truncate">
+                    {displayName}
+                  </p>
+                  <p className="text-xs text-zinc-400 truncate">
+                    {user?.email || 'kullanici@ecotrack.ai'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Institution badge */}
+              {(user?.universite || user?.bolum) && (
+                <div
+                  className="rounded-xl px-3 py-2 mb-3 text-xs"
+                  style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}
+                >
+                  {user?.universite && (
+                    <p className="font-medium text-emerald-400">
+                      {user.universite}
+                    </p>
+                  )}
+                  {user?.bolum && (
+                    <p className="text-[11px] text-zinc-400">
+                      {user.bolum}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    onOpenSettings();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 transition-colors"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.color = '#F0FDF4';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#D4D4D8';
+                  }}
+                >
+                  <Settings size={14} color="#86EFAC" />
+                  <span>Hedef & Tercih Ayarları</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    logout();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-400 transition-colors"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)';
+                    e.currentTarget.style.color = '#F87171';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#F87171';
+                  }}
+                >
+                  <LogOut size={14} color="#EF4444" />
+                  <span>Çıkış Yap</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Quick Search Modal (Ctrl + K) ── */}

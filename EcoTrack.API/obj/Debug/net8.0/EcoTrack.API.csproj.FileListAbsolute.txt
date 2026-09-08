@@ -134,3 +134,11 @@ C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\obj\Debug\net8.0\refin
 C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\obj\Debug\net8.0\EcoTrack.API.pdb
 C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\obj\Debug\net8.0\EcoTrack.API.genruntimeconfig.cache
 C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\obj\Debug\net8.0\ref\EcoTrack.API.dll
+C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\Excalibur\Desktop\ai-carbon-tracker\EcoTrack.API\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll

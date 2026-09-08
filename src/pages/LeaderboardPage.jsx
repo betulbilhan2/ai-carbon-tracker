@@ -4,15 +4,21 @@ import UserRankBanner   from '../components/leaderboard/UserRankBanner';
 import LeaderboardTable from '../components/leaderboard/LeaderboardTable';
 import BadgeShowcase    from '../components/leaderboard/BadgeShowcase';
 import { getLeaderboard } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function LeaderboardPage() {
+  const { user } = useAuth();
   const [scope, setScope] = useState('university');
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const currentUserId = user?.kullaniciId ?? user?.kullanici_id;
+  const currentUserName = (user?.ad_soyad || user?.adSoyad || '').trim().toLowerCase();
+  const currentUserEmail = (user?.email || user?.eposta || '').trim().toLowerCase();
+
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const data = await getLeaderboard();
+      const data = await getLeaderboard(currentUserId);
       if (Array.isArray(data) && data.length > 0) {
         setLeaderboardData(data);
       }
@@ -21,14 +27,26 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
 
-  // Canlı listede Ayşe Kaya'nın (aktif kullanıcının) bilgilerini tespit et
-  const currentUser = leaderboardData.find(u => u.aktifKullaniciMi);
+  // Canlı listede aktif kullanıcının bilgilerini tespit et
+  const currentUser = leaderboardData.find(u =>
+    (currentUserId && u.kullaniciId === currentUserId) ||
+    (currentUserEmail && u.eposta && u.eposta.toLowerCase() === currentUserEmail) ||
+    (currentUserName && u.adSoyad && u.adSoyad.trim().toLowerCase() === currentUserName) ||
+    u.aktifKullaniciMi
+  );
+
+  const totalCount = leaderboardData.length > 0
+    ? (currentUser ? leaderboardData.length : leaderboardData.length + 1)
+    : null;
+
+  const userRank = currentUser?.siraNo ?? (leaderboardData.length > 0 ? leaderboardData.length + 1 : null);
+  const userScore = currentUser?.ecoPuan ?? (user?.ecoScore ?? user?.ecoPuan ?? 100);
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,9 +67,9 @@ export default function LeaderboardPage() {
       {/* ── User rank banner (full width) ── */}
       <UserRankBanner
         scope={scope}
-        userRank={currentUser?.siraNo}
-        userScore={currentUser?.ecoPuan}
-        totalUsers={leaderboardData.length > 0 ? leaderboardData.length : null}
+        userRank={userRank}
+        userScore={userScore}
+        totalUsers={totalCount}
       />
 
       {/* ── Two-column: Table (65%) + Badges (35%) ── */}

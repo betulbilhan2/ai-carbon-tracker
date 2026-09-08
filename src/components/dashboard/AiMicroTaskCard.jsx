@@ -1,102 +1,119 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Clock3, Bot, Zap, Globe2, Sparkles, Check } from 'lucide-react';
+import { CheckCircle2, Clock3, Bot, Zap, Globe2, Sparkles, Check, Tag } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { addUserPoints } from '../../services/api';
 
-const ALTERNATIVE_TASKS = [
+const MICRO_TASKS = [
   {
-    metin: "Bugün asansör yerine merdiven kullanarak 0.3 kg emisyon önle.",
-    tasarruf: "Tahmini 0.3 kg CO₂e tasarruf",
-    skor: 6.8
+    id: 1,
+    title: "Kullandığın 2 adet tek kullanımlık plastik yerine paslanmaz çelik matara kullanarak plastik atık zincirini kırabilirsin.",
+    category: "Sıfır Atık",
+    etkiSkoru: "6.6 / 10",
+    sure: "~5 dk",
+    motivasyon: 66,
+    puan: 50
   },
   {
-    metin: "Kısa mesafeli kampüs içi seyahatlerde yürümeyi tercih et.",
-    tasarruf: "Tahmini 0.8 kg CO₂e tasarruf",
-    skor: 7.5
+    id: 2,
+    title: "Bugün kampüs içinde 2 km'lik kısa mesafeyi araç yerine yürüyerek veya bisikletle tamamla.",
+    category: "Ulaşım",
+    etkiSkoru: "8.2 / 10",
+    sure: "~15 dk",
+    motivasyon: 82,
+    puan: 50
   },
   {
-    metin: "Kullanmadığın çalışma lambasını ve monitörü kapat.",
-    tasarruf: "Tahmini 0.5 kg CO₂e tasarruf",
-    skor: 6.2
+    id: 3,
+    title: "Öğle yemeğinde kırmızı et yerine bitkisel protein veya sebze ağırlıklı bir menü tercih et.",
+    category: "Beslenme",
+    etkiSkoru: "7.4 / 10",
+    sure: "~30 dk",
+    motivasyon: 74,
+    puan: 50
   },
   {
-    metin: "Bugün tek kullanımlık bardak yerine kendi termosunu kullan.",
-    tasarruf: "Tahmini 0.2 kg CO₂e ve sıfır atık",
-    skor: 8.0
+    id: 4,
+    title: "Çalışma alanından ayrılırken bekleme (standby) modundaki elektronik cihazların prizlerini kapat.",
+    category: "Enerji",
+    etkiSkoru: "5.8 / 10",
+    sure: "~2 dk",
+    motivasyon: 58,
+    puan: 50
+  },
+  {
+    id: 5,
+    title: "Kampüsteki geri dönüşüm istasyonunu kullanarak kağıt ve karton atıklarını doğru kutuya ayrıştır.",
+    category: "Sıfır Atık",
+    etkiSkoru: "7.0 / 10",
+    sure: "~3 dk",
+    motivasyon: 70,
+    puan: 50
   }
 ];
 
 export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
-  const [done,          setDone]          = useState(false);
+  const { user, updateUser } = useAuth();
+  const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
+  const [toastMessage, setToastMessage] = useState('');
   const [successStatus, setSuccessStatus] = useState(false);
-  const [applying,      setApplying]      = useState(false);
-  const [barWidth,      setBarWidth]      = useState(0);
-  const [taskIndex,     setTaskIndex]     = useState(0);
-  const [toastMessage,  setToastMessage]  = useState('');
+  const [applying, setApplying] = useState(false);
+  const [barWidth, setBarWidth] = useState(0);
 
-  // Aktif görev metni ve etki skoru (backend'den veya alternatif listeden)
-  const currentTask = (taskIndex === 0 && oneri) 
-    ? {
-        metin: oneri.oneriMetni,
-        tasarruf: oneri.potansiyelTasarruf || 'Tahmini 1.8 kg CO₂e tasarruf',
-        skor: oneri.etkiSkoru || 7.2,
-      }
-    : ALTERNATIVE_TASKS[(taskIndex) % ALTERNATIVE_TASKS.length];
+  const task = MICRO_TASKS[currentTaskIndex % MICRO_TASKS.length];
 
   // Motivasyon çubuğu animasyonu
   useEffect(() => {
-    const pct = Math.round(Math.min((currentTask?.skor || 7.2) * 10, 100));
     setBarWidth(0);
-    const timer = setTimeout(() => setBarWidth(pct), 200);
+    const timer = setTimeout(() => setBarWidth(task.motivasyon), 150);
     return () => clearTimeout(timer);
-  }, [taskIndex, oneri, currentTask?.skor]);
+  }, [currentTaskIndex, task.motivasyon]);
 
-  // ── Görevi Kabul Et (+50 Puan) ──────────────────────────────────
   async function handleComplete() {
-    if (done || applying) return;
+    if (applying || successStatus) return;
     setApplying(true);
 
+    const currentPoints = Number(user?.eco_puan || user?.ecoPuan || user?.ecoScore || 105);
+    const newPoints = currentPoints + 50;
+
+    // 1. AuthContext ve localStorage güncelle
+    updateUser?.({
+      eco_puan: newPoints,
+      ecoPuan: newPoints,
+      ecoScore: newPoints,
+    });
+
+    // 2. Parent callback (App.jsx & OverviewPage)
+    onComplete?.(50);
+
+    // 3. Backend API çağrısı
     try {
-      // 1. Backend'de öneriyi uygula ve +50 Eco-Puan ekle
+      const uid = user?.kullaniciId || user?.kullanici_id || user?.id || 1;
+      await addUserPoints(uid, 50);
       if (oneri?.oneriId && onApply) {
         await onApply(oneri.oneriId);
       }
-      await addUserPoints(1, 50);
-
-      // 2. Başarı durumu ve onay bildirimi
-      setSuccessStatus(true);
-      setToastMessage('🎉 Görev tamamlandı! +50 Eco-Puan hesabına tanımlandı.');
-      onComplete?.(50);
-
-      // 3. 2 saniye onay göster, ardından yeni bir öneriye geç
-      setTimeout(() => {
-        setSuccessStatus(false);
-        setDone(false);
-        setTaskIndex(prev => prev + 1);
-        setToastMessage('');
-      }, 2500);
-
     } catch (err) {
-      console.warn('Öneri uygulanırken yerel güncelleme yapıldı:', err);
-      setSuccessStatus(true);
-      setToastMessage('🎉 Görev tamamlandı! +50 Eco-Puan hesabına tanımlandı.');
-      onComplete?.(50);
-      setTimeout(() => {
-        setSuccessStatus(false);
-        setDone(false);
-        setTaskIndex(prev => prev + 1);
-        setToastMessage('');
-      }, 2500);
-    } finally {
-      setApplying(false);
+      console.warn('Backend puan ekleme bildirimi:', err);
     }
+
+    // 4. Başarı durumu ve Toast
+    setToastMessage(`Tebrikler! +50 Puan kazandınız. Yeni güncel puanınız: ${newPoints}`);
+    setSuccessStatus(true);
+
+    // 5. Yeni göreve kaydır ve butonu tekrar aktif et
+    setTimeout(() => {
+      setSuccessStatus(false);
+      setApplying(false);
+      setCurrentTaskIndex(prev => (prev + 1) % MICRO_TASKS.length);
+      setToastMessage('');
+    }, 1200);
   }
 
-  // ── Yarına Ertele (Alternatif Görev Getir) ────────────────────────
   function handlePostpone() {
     if (applying || successStatus) return;
-    setTaskIndex(prev => prev + 1);
-    setToastMessage('⏭ Yeni alternatif mikro görev getirildi.');
-    setTimeout(() => setToastMessage(''), 2500);
+    setCurrentTaskIndex(prev => (prev + 1) % MICRO_TASKS.length);
+    setToastMessage('⏭ Yeni mikro görev getirildi.');
+    setTimeout(() => setToastMessage(''), 1500);
   }
 
   return (
@@ -111,14 +128,15 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
       {/* Toast Bildirimi */}
       {toastMessage && (
         <div
-          className="absolute top-3 right-4 rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 z-20 animate-fade-in"
+          className="absolute top-3 right-4 rounded-xl px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 z-20 animate-fade-in"
           style={{
             backgroundColor: 'rgba(34,197,94,0.18)',
             border: '1px solid #22C55E',
-            color: '#22C55E',
+            color: '#86EFAC',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
           }}
         >
-          <Sparkles size={13} />
+          <Sparkles size={13} color="#22C55E" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -139,6 +157,13 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
           <Zap size={12} />
           Fogg B=MAP
         </span>
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+          style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}
+        >
+          <Tag size={11} />
+          {task.category}
+        </span>
         {successStatus && (
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
@@ -155,10 +180,10 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
           className="text-base font-bold leading-snug transition-all duration-300"
           style={{ color: '#F0FDF4' }}
         >
-          {currentTask.metin}
+          {task.title}
         </h3>
         <p className="text-xs mt-2 leading-relaxed" style={{ color: '#4B6E5E' }}>
-          {currentTask.tasarruf}
+          Görev #{task.id} / {MICRO_TASKS.length} · Davranışsal mikro müdahale ve anlık alışkanlık tetikleyicisi
         </p>
       </div>
 
@@ -169,14 +194,14 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
           style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}
         >
           <Globe2 size={12} />
-          Etki Skoru: {Number(currentTask.skor).toFixed(1)} / 10
+          Etki Skoru: {task.etkiSkoru}
         </span>
         <span
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
           style={{ backgroundColor: '#182420', color: '#4B6E5E', border: '1px solid #1E3A30' }}
         >
           <Clock3 size={12} />
-          ~5 dk
+          {task.sure}
         </span>
       </div>
 
@@ -207,7 +232,7 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
           type="button"
           onClick={handleComplete}
           disabled={applying || successStatus}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50"
           style={{
             height: '44px',
             backgroundColor: successStatus ? '#16A34A' : '#22C55E',
@@ -236,7 +261,7 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
           type="button"
           onClick={handlePostpone}
           disabled={applying || successStatus}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50"
           style={{
             height: '44px',
             backgroundColor: 'transparent',

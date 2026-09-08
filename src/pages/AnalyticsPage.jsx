@@ -7,14 +7,17 @@ import AnomalyAlertBanner       from '../components/analytics/AnomalyAlertBanner
 import AiForecastCard           from '../components/analytics/AiForecastCard';
 import WhatIfSimulator          from '../components/analytics/WhatIfSimulator';
 import { getCarbonForecast }    from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function AnalyticsPage({ onNavigateCoach }) {
+  const { user } = useAuth();
+  const userId = user?.kullaniciId || 1;
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchForecast = useCallback(async () => {
     try {
-      const data = await getCarbonForecast(1);
+      const data = await getCarbonForecast(userId);
       if (data) {
         setForecast(data);
       }
@@ -23,7 +26,7 @@ export default function AnalyticsPage({ onNavigateCoach }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchForecast();
