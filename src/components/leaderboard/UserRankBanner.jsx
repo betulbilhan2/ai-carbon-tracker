@@ -1,11 +1,12 @@
 import { USER_RANK_BY_SCOPE } from './leaderboardData';
 
 export default function UserRankBanner({ scope = 'university', userRank = null, userScore = null, totalUsers = null }) {
-  const fallback = USER_RANK_BY_SCOPE[scope] ?? { rank: 14, total: 847 };
+  const scopeMeta = USER_RANK_BY_SCOPE[scope] ?? { rank: 2, total: 5 };
 
-  const currentRank  = userRank  ?? fallback.rank;
-  const currentScore = userScore ?? 847;
-  const totalCount   = totalUsers ?? fallback.total;
+  // Üniversite kapsamında canlı veri varsa onu kullan, diğer kapsamlarda (Şehir, TR) kapsam istatistiğini göster
+  const currentRank  = (scope === 'university' && userRank) ? userRank : scopeMeta.rank;
+  const currentScore = userScore ?? 510;
+  const totalCount   = (scope === 'university' && totalUsers) ? totalUsers : scopeMeta.total;
 
   const nextTierThreshold = Math.ceil((currentScore + 50) / 100) * 100;
   const ptsLeft = Math.max(0, nextTierThreshold - currentScore);

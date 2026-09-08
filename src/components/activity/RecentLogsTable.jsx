@@ -1,4 +1,4 @@
-import { Trash2, Pencil } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 // ── Category display helpers ──────────────────────────────────────
 const CATEGORY_META = {
@@ -7,45 +7,6 @@ const CATEGORY_META = {
   food:      { emoji: '🥗', label: 'Beslenme',     color: '#14B8A6' },
   waste:     { emoji: '♻️', label: 'Sıfır Atık',  color: '#60A5FA' },
 };
-
-// ── Mock initial data (ER model compatible) ───────────────────────
-export const INITIAL_LOGS = [
-  {
-    id: 1,
-    datetime: '2026-09-01T14:30',
-    category: 'transport',
-    detail: 'Araba · 47 km',
-    kg: 6.82,
-  },
-  {
-    id: 2,
-    datetime: '2026-09-01T08:15',
-    category: 'food',
-    detail: 'Kırmızı Etli · 2 porsiyon',
-    kg: 13.22,
-  },
-  {
-    id: 3,
-    datetime: '2026-08-31T19:45',
-    category: 'energy',
-    detail: 'Elektrik · 24 kWh',
-    kg: 11.54,
-  },
-  {
-    id: 4,
-    datetime: '2026-08-31T10:00',
-    category: 'transport',
-    detail: 'Metro · 18 km',
-    kg: 0.36,
-  },
-  {
-    id: 5,
-    datetime: '2026-08-30T17:20',
-    category: 'waste',
-    detail: 'Plastik Şişe × 3, Cam × 2',
-    kg: 0.27,
-  },
-];
 
 // ── Format datetime for display ───────────────────────────────────
 function formatDT(str) {
@@ -59,7 +20,7 @@ function formatDT(str) {
 }
 
 // ── Component ─────────────────────────────────────────────────────
-export default function RecentLogsTable({ logs, onDelete }) {
+export default function RecentLogsTable({ logs = [], onDelete }) {
   return (
     <div
       className="rounded-2xl overflow-hidden"
@@ -111,9 +72,11 @@ export default function RecentLogsTable({ logs, onDelete }) {
             {logs.map((log, idx) => {
               const meta = CATEGORY_META[log.category] ?? { emoji: '📋', label: log.category, color: '#86EFAC' };
               const isEven = idx % 2 === 0;
+              const rowId = log.aktivite_id ?? log.id ?? log.aktiviteId;
+
               return (
                 <tr
-                  key={log.id}
+                  key={rowId ?? idx}
                   style={{ backgroundColor: isEven ? 'transparent' : 'rgba(255,255,255,0.015)' }}
                 >
                   {/* Datetime */}
@@ -142,7 +105,7 @@ export default function RecentLogsTable({ logs, onDelete }) {
                       className="font-mono font-bold text-sm"
                       style={{ color: log.kg > 10 ? '#EF4444' : log.kg > 5 ? '#F59E0B' : '#22C55E' }}
                     >
-                      {log.kg.toFixed(2)}
+                      {Number(log.kg || 0).toFixed(2)}
                     </span>
                     <span className="text-xs ml-1" style={{ color: '#4B6E5E' }}>kg</span>
                   </td>
@@ -151,23 +114,24 @@ export default function RecentLogsTable({ logs, onDelete }) {
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       <button
-                        className="flex items-center justify-center rounded-lg transition-colors"
-                        style={{ width: 28, height: 28, backgroundColor: '#182420', border: '1px solid #1E3A30' }}
-                        title="Düzenle"
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#22C55E')}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E3A30')}
-                      >
-                        <Pencil size={12} color="#4B6E5E" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(log.id)}
-                        className="flex items-center justify-center rounded-lg transition-colors"
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const silinecekId = log.aktivite_id ?? log.id ?? log.aktiviteId;
+                          console.log("Butona basildi, id:", silinecekId, log);
+                          if (onDelete && silinecekId) {
+                            onDelete(silinecekId);
+                          } else {
+                            console.error("onDelete fonksiyonu veya id bulunamadı!", { onDelete, silinecekId });
+                          }
+                        }}
+                        className="flex items-center justify-center rounded-lg transition-colors cursor-pointer group"
                         style={{ width: 28, height: 28, backgroundColor: '#182420', border: '1px solid #1E3A30' }}
                         title="Sil"
                         onMouseEnter={e => (e.currentTarget.style.borderColor = '#EF4444')}
                         onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E3A30')}
                       >
-                        <Trash2 size={12} color="#4B6E5E" />
+                        <Trash2 size={13} className="pointer-events-none text-zinc-400 group-hover:text-red-500 transition-colors" />
                       </button>
                     </div>
                   </td>

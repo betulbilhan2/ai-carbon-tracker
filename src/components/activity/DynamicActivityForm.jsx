@@ -1,4 +1,4 @@
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, RotateCcw } from 'lucide-react';
 import {
   TRANSPORT_VEHICLES,
   ENERGY_TYPES,
@@ -6,6 +6,13 @@ import {
   WASTE_TYPES,
   nowDateTimeLocal,
 } from './activityConstants';
+
+const NOTE_PLACEHOLDERS = {
+  transport: 'Örn: İş toplantısı dönüşü, metro çalışmıyordu...',
+  energy:    'Örn: Akşam saatlerinde klima kullanımı, ütü...',
+  food:      'Örn: Akşam yemeğinde etli menü seçimi...',
+  waste:     'Örn: Kampüs geri dönüşüm kutularına atılan şişeler...',
+};
 
 // ── Shared sub-components ─────────────────────────────────────────
 
@@ -65,10 +72,28 @@ function RangeSlider({ value, onChange, min = 0, max, step = 1 }) {
   );
 }
 
-function DateTimeField({ value, onChange }) {
+function DateTimeField({ value, onChange, onReset }) {
   return (
     <div>
-      <FieldLabel>Tarih &amp; Saat</FieldLabel>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold" style={{ color: '#4B6E5E' }}>
+          Tarih &amp; Saat
+        </p>
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex items-center gap-1 text-xs transition-colors cursor-pointer"
+            style={{ color: '#4B6E5E' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#86EFAC')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#4B6E5E')}
+            title="Form alanlarını varsayılan değerlere sıfırla"
+          >
+            <RotateCcw size={12} />
+            <span>Formu Sıfırla</span>
+          </button>
+        )}
+      </div>
       <input
         type="datetime-local"
         value={value}
@@ -87,7 +112,9 @@ function DateTimeField({ value, onChange }) {
   );
 }
 
-function NoteField({ value, onChange }) {
+function NoteField({ value, onChange, category = 'transport' }) {
+  const placeholder = NOTE_PLACEHOLDERS[category] || 'Aktivite hakkında kısa bir not ekleyin...';
+
   return (
     <div>
       <FieldLabel>Açıklama / Not (İsteğe Bağlı)</FieldLabel>
@@ -95,7 +122,7 @@ function NoteField({ value, onChange }) {
         rows={2}
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder="Örn: İş toplantısı dönüşü, otobüs doluştu..."
+        placeholder={placeholder}
         className="w-full rounded-xl px-4 py-2.5 text-sm resize-none outline-none transition-colors"
         style={{
           backgroundColor: '#182420',
@@ -111,7 +138,7 @@ function NoteField({ value, onChange }) {
 }
 
 // ── Transport Form ────────────────────────────────────────────────
-function TransportForm({ formData, setFormData }) {
+function TransportForm({ formData, setFormData, onReset }) {
   const { vehicleId = 'car', distance = 10, datetime, note } = formData;
 
   function setField(key, val) {
@@ -166,14 +193,14 @@ function TransportForm({ formData, setFormData }) {
         </div>
       </div>
 
-      <DateTimeField value={datetime} onChange={v => setField('datetime', v)} />
-      <NoteField value={note} onChange={v => setField('note', v)} />
+      <DateTimeField value={datetime} onChange={v => setField('datetime', v)} onReset={onReset} />
+      <NoteField value={note} onChange={v => setField('note', v)} category="transport" />
     </FormCard>
   );
 }
 
 // ── Energy Form ───────────────────────────────────────────────────
-function EnergyForm({ formData, setFormData }) {
+function EnergyForm({ formData, setFormData, onReset }) {
   const { energyTypeId = 'electricity', amount = 10, datetime, note } = formData;
 
   function setField(key, val) {
@@ -229,14 +256,14 @@ function EnergyForm({ formData, setFormData }) {
         </div>
       </div>
 
-      <DateTimeField value={datetime} onChange={v => setField('datetime', v)} />
-      <NoteField value={note} onChange={v => setField('note', v)} />
+      <DateTimeField value={datetime} onChange={v => setField('datetime', v)} onReset={onReset} />
+      <NoteField value={note} onChange={v => setField('note', v)} category="energy" />
     </FormCard>
   );
 }
 
 // ── Food Form ─────────────────────────────────────────────────────
-function FoodForm({ formData, setFormData }) {
+function FoodForm({ formData, setFormData, onReset }) {
   const { mealTypeId = 'vegetarian', portions = 1, datetime, note } = formData;
 
   function setField(key, val) {
@@ -283,14 +310,14 @@ function FoodForm({ formData, setFormData }) {
         </div>
       </div>
 
-      <DateTimeField value={datetime} onChange={v => setField('datetime', v)} />
-      <NoteField value={note} onChange={v => setField('note', v)} />
+      <DateTimeField value={datetime} onChange={v => setField('datetime', v)} onReset={onReset} />
+      <NoteField value={note} onChange={v => setField('note', v)} category="food" />
     </FormCard>
   );
 }
 
 // ── Waste Form ────────────────────────────────────────────────────
-function WasteForm({ formData, setFormData }) {
+function WasteForm({ formData, setFormData, onReset }) {
   const { wasteItems = {}, datetime, note } = formData;
 
   function setField(key, val) {
@@ -372,15 +399,15 @@ function WasteForm({ formData, setFormData }) {
         </div>
       </div>
 
-      <DateTimeField value={datetime} onChange={v => setField('datetime', v)} />
-      <NoteField value={note} onChange={v => setField('note', v)} />
+      <DateTimeField value={datetime} onChange={v => setField('datetime', v)} onReset={onReset} />
+      <NoteField value={note} onChange={v => setField('note', v)} category="waste" />
     </FormCard>
   );
 }
 
 // ── Main Export ───────────────────────────────────────────────────
-export default function DynamicActivityForm({ category, formData, setFormData }) {
-  const props = { formData, setFormData };
+export default function DynamicActivityForm({ category, formData, setFormData, onReset }) {
+  const props = { formData, setFormData, onReset };
   if (category === 'transport') return <TransportForm {...props} />;
   if (category === 'energy')    return <EnergyForm    {...props} />;
   if (category === 'food')      return <FoodForm      {...props} />;

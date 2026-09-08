@@ -25,8 +25,9 @@ function avatarColor(name) {
 export default function LeaderboardTable({ scope = 'university', liveData = null }) {
   const [expanded, setExpanded] = useState(false);
 
-  // Canlı API verisi varsa kullan, yoksa scope'a göre mock veriyi fallback olarak göster
-  const rows = (liveData && liveData.length > 0)
+  // Eğer scope 'university' ve canlı API verisi varsa kullan,
+  // Şehir veya Türkiye geneli seçildiğinde ilgili kapsama ait zenginleştirilmiş sıralamayı göster
+  const rows = (scope === 'university' && liveData && liveData.length > 0)
     ? liveData.map(item => ({
         rank:         item.siraNo,
         name:         item.adSoyad,
@@ -151,14 +152,14 @@ export default function LeaderboardTable({ scope = 'university', liveData = null
             En Yüksek Etki Puanına Sahip Kullanıcılar
           </h3>
           <p className="text-xs mt-0.5" style={{ color: '#4B6E5E' }}>
-            {liveData ? '● Supabase canlı sıralama verisi' : 'Sıralama'}
+            {scope === 'university' && liveData ? '● Supabase canlı sıralama verisi' : '● Kapsam Bazlı Sıralama Verisi'}
           </p>
         </div>
         <span
           className="text-xs rounded-full px-3 py-0.5 font-mono"
           style={{ backgroundColor: '#182420', color: '#4B6E5E', border: '1px solid #1E3A30' }}
         >
-          {liveData ? `${rows.length} Kullanıcı` : 'Top 10'}
+          {scope === 'university' && liveData ? `${rows.length} Kullanıcı` : `${rows.length} Kullanıcı Listelendi`}
         </span>
       </div>
 

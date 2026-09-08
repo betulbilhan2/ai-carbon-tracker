@@ -1,4 +1,5 @@
-import { Lock } from 'lucide-react';
+import { useState } from 'react';
+import { Lock, Award } from 'lucide-react';
 
 const BADGES = [
   {
@@ -7,6 +8,7 @@ const BADGES = [
     name: 'İlk Adım',
     description: 'İlk aktivite kaydedildi.',
     status: 'earned',
+    points: 50,
     glowColor: '#22C55E',
   },
   {
@@ -15,6 +17,7 @@ const BADGES = [
     name: 'Gezegen Dostu',
     description: '10 kg CO₂e tasarruf sağlandı.',
     status: 'earned',
+    points: 120,
     glowColor: '#14B8A6',
   },
   {
@@ -23,6 +26,7 @@ const BADGES = [
     name: 'Atık Savaşçısı',
     description: 'Sıfır tek kullanımlık plastik.',
     status: 'earned',
+    points: 90,
     glowColor: '#22C55E',
   },
   {
@@ -31,6 +35,7 @@ const BADGES = [
     name: '14 Günlük Seri',
     description: 'Her gün aktivite kaydet.',
     status: 'progress',
+    points: 150,
     progress: { current: 12, total: 14 },
     glowColor: '#F59E0B',
   },
@@ -40,20 +45,22 @@ const BADGES = [
     name: 'Yeşil Komuter',
     description: '50 km bisiklet / toplu taşıma kullan.',
     status: 'locked',
+    points: 100,
     glowColor: '#4B6E5E',
   },
   {
     id: 'summit_club',
     emoji: '🏆',
     name: 'Zirve Kulübü',
-    description: 'Üniversite sıralamasında ilk 10\'a gir.',
+    description: 'Üniversite sıralamasında 1. sıraya (Zirveye) yerleş.',
     status: 'locked',
+    points: 250,
     glowColor: '#4B6E5E',
   },
 ];
 
-function BadgeCard({ badge }) {
-  const { emoji, name, description, status, progress, glowColor } = badge;
+function BadgeCard({ badge, onSelect }) {
+  const { emoji, name, description, status, progress, glowColor, points } = badge;
 
   const isEarned   = status === 'earned';
   const isProgress = status === 'progress';
@@ -63,7 +70,8 @@ function BadgeCard({ badge }) {
 
   return (
     <div
-      className="rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200"
+      onClick={() => onSelect(badge)}
+      className="rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 cursor-pointer hover:scale-[1.02] active:scale-[0.99] select-none group"
       style={{
         backgroundColor: isLocked ? '#0D1410' : '#111816',
         boxShadow: isEarned
@@ -71,13 +79,13 @@ function BadgeCard({ badge }) {
           : isProgress
             ? `inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px #F59E0B44, 0 0 14px #F59E0B10`
             : '0 0 0 1px #1E3A30',
-        opacity: isLocked ? 0.5 : 1,
-        filter: isLocked ? 'grayscale(0.7)' : 'none',
+        opacity: isLocked ? 0.65 : 1,
+        filter: isLocked ? 'grayscale(0.6)' : 'none',
       }}
     >
       {/* Emoji + Status tag */}
       <div className="flex items-start justify-between">
-        <span className="text-3xl">{isLocked ? '🔒' : emoji}</span>
+        <span className="text-3xl group-hover:scale-110 transition-transform">{isLocked ? '🔒' : emoji}</span>
         <span
           className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
           style={{
@@ -99,12 +107,17 @@ function BadgeCard({ badge }) {
 
       {/* Name + description */}
       <div>
-        <p
-          className="text-sm font-semibold"
-          style={{ color: isLocked ? '#4B6E5E' : '#F0FDF4' }}
-        >
-          {name}
-        </p>
+        <div className="flex items-center justify-between">
+          <p
+            className="text-sm font-semibold"
+            style={{ color: isLocked ? '#86EFAC' : '#F0FDF4' }}
+          >
+            {name}
+          </p>
+          <span className="text-[11px] font-mono font-bold" style={{ color: '#14B8A6' }}>
+            +{points} pts
+          </span>
+        </div>
         <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#4B6E5E' }}>
           {description}
         </p>
@@ -137,7 +150,7 @@ function BadgeCard({ badge }) {
       {isLocked && (
         <div className="flex items-center gap-1.5">
           <Lock size={11} color="#4B6E5E" />
-          <span className="text-xs" style={{ color: '#4B6E5E' }}>Koşulları tamamla</span>
+          <span className="text-xs" style={{ color: '#4B6E5E' }}>Detay için tıkla</span>
         </div>
       )}
     </div>
@@ -145,12 +158,20 @@ function BadgeCard({ badge }) {
 }
 
 export default function BadgeShowcase() {
-  const earned   = BADGES.filter(b => b.status === 'earned').length;
-  const total    = BADGES.length;
+  const [selectedToast, setSelectedToast] = useState(null);
+  const earned = BADGES.filter(b => b.status === 'earned').length;
+  const total  = BADGES.length;
+
+  const handleBadgeClick = (badge) => {
+    setSelectedToast(badge);
+    setTimeout(() => {
+      setSelectedToast(prev => (prev?.id === badge.id ? null : prev));
+    }, 4000);
+  };
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden relative flex flex-col"
       style={{
         backgroundColor: '#111816',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px #1E3A30',
@@ -169,9 +190,43 @@ export default function BadgeShowcase() {
         </span>
       </div>
 
+      {/* Badge Toast Notification */}
+      {selectedToast && (
+        <div
+          className="mx-5 mt-4 p-3 rounded-xl flex items-center gap-3 animate-fade-in text-xs"
+          style={{
+            backgroundColor: selectedToast.status === 'earned' ? 'rgba(34,197,94,0.12)' : selectedToast.status === 'progress' ? 'rgba(245,158,11,0.12)' : 'rgba(20,184,166,0.12)',
+            border: `1px solid ${selectedToast.status === 'earned' ? '#22C55E' : selectedToast.status === 'progress' ? '#F59E0B' : '#14B8A6'}`,
+            color: '#F0FDF4',
+          }}
+        >
+          <span className="text-2xl">{selectedToast.emoji}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-[#86EFAC]">{selectedToast.name}</span>
+              <span className="font-mono text-[10px] text-[#14B8A6] font-semibold">+{selectedToast.points} pts</span>
+              <span
+                className="text-[10px] px-1.5 py-0.2 rounded"
+                style={{
+                  backgroundColor: selectedToast.status === 'earned' ? '#22C55E22' : '#1E3A30',
+                  color: selectedToast.status === 'earned' ? '#22C55E' : '#4B6E5E',
+                }}
+              >
+                {selectedToast.status === 'earned' ? 'Kazanıldı ✓' : selectedToast.status === 'progress' ? 'Devam Ediyor' : 'Kilitli'}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#86EFAC]/80 mt-0.5 leading-snug">
+              {selectedToast.description}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Badge grid */}
       <div className="p-5 grid grid-cols-2 gap-3">
-        {BADGES.map(b => <BadgeCard key={b.id} badge={b} />)}
+        {BADGES.map(b => (
+          <BadgeCard key={b.id} badge={b} onSelect={handleBadgeClick} />
+        ))}
       </div>
     </div>
   );

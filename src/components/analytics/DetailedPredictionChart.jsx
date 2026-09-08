@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, AlertTriangle, Sparkles } from 'lucide-react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -62,29 +62,42 @@ function CustomTooltip({ active, payload, label }) {
       style={{
         backgroundColor: '#182420',
         border: `1px solid ${isAnomaly ? '#F59E0B' : '#1E3A30'}`,
-        minWidth: 170,
+        minWidth: '180px',
+        boxShadow: isAnomaly ? '0 0 16px rgba(245,158,11,0.2)' : 'none',
       }}
     >
-      <p className="font-semibold mb-2" style={{ color: isAnomaly ? '#F59E0B' : '#86EFAC' }}>
-        {label} {isAnomaly ? '⚠️ Anormallik' : ''}
-      </p>
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-semibold" style={{ color: '#86EFAC' }}>{label}</span>
+        {isAnomaly && (
+          <span
+            className="rounded px-1.5 py-0.5 text-xs font-bold"
+            style={{ backgroundColor: '#F59E0B22', color: '#F59E0B' }}
+          >
+            ⚠️ Anormallik
+          </span>
+        )}
+      </div>
+
       {actual && (
         <p style={{ color: '#22C55E' }}>
-          ● Gerçekleşen:{' '}
+          ● Gerçekleşen:&nbsp;
           <span className="font-mono font-bold">{actual.value} kg</span>
         </p>
       )}
       {predicted && (
         <p className="mt-1" style={{ color: '#60A5FA' }}>
-          ◌ Tahmin:{' '}
+          ◌ TabNet Tahmini:&nbsp;
           <span className="font-mono font-bold">{predicted.value} kg</span>
         </p>
       )}
       {diff !== null && (
-        <p className="mt-1" style={{ color: parseFloat(diff) > 1 ? '#EF4444' : '#86EFAC' }}>
-          Δ Sapma:{' '}
-          <span className="font-mono font-bold">
-            {parseFloat(diff) > 0 ? '+' : ''}{diff} kg
+        <p className="mt-1" style={{ color: '#4B6E5E' }}>
+          Δ Sapma:&nbsp;
+          <span
+            className="font-mono font-bold"
+            style={{ color: Number(diff) > 2 ? '#EF4444' : Number(diff) > 0 ? '#F59E0B' : '#86EFAC' }}
+          >
+            {Number(diff) > 0 ? `+${diff}` : diff} kg
           </span>
         </p>
       )}
@@ -92,66 +105,87 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-// ── Anomaly SVG Label ─────────────────────────────────────────────
-function AnomalyLabel({ viewBox }) {
-  const { x } = viewBox ?? {};
-  if (x == null) return null;
+// ── Anomaly Reference Line Label ──────────────────────────────────
+function AnomalyLabel({ viewBox, onClick }) {
+  const { x } = viewBox;
   return (
-    <g>
-      <rect x={x - 58} y={6} width={116} height={22} rx={6}
-        fill="rgba(245,158,11,0.12)" stroke="#F59E0B" strokeWidth={1} />
-      <text x={x} y={20} textAnchor="middle" fill="#F59E0B"
-        fontSize={10} fontWeight={700}>
-        ⚠️ Anormallik (+47%)
+    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+      <rect
+        x={x - 46}
+        y={8}
+        width={92}
+        height={22}
+        rx={6}
+        fill="#F59E0B22"
+        stroke="#F59E0B"
+        strokeWidth={1.5}
+      />
+      <text
+        x={x}
+        y={23}
+        textAnchor="middle"
+        fill="#F59E0B"
+        fontSize={10}
+        fontWeight="bold"
+      >
+        ⚠️ Anormallik (G9)
       </text>
     </g>
   );
 }
 
-// ── Anomaly Detail Panel ──────────────────────────────────────────
+// ── Anomaly Detail Toast/Panel ────────────────────────────────────
 function AnomalyPanel({ onClose }) {
   return (
     <div
-      className="rounded-xl p-5 flex items-start justify-between gap-4"
+      className="mt-4 rounded-xl p-4 flex items-start justify-between gap-4 animate-fade-in"
       style={{
         backgroundColor: '#182420',
         border: '1px solid #F59E0B',
-        marginTop: 16,
+        boxShadow: '0 0 20px rgba(245,158,11,0.12)',
       }}
     >
       <div className="flex-1">
-        <p className="text-sm font-semibold mb-3" style={{ color: '#F59E0B' }}>
-          ⚠️ Müdahale &amp; Sapma Analiz Paneli — Gün 9
-        </p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="flex items-center gap-2 mb-2">
+          <AlertTriangle size={18} color="#F59E0B" />
+          <p className="text-sm font-bold" style={{ color: '#F59E0B' }}>
+            Tespit Edilen Anormallik: 9. Günde %47 Plastik Tüketim Aşımı
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 my-3">
           {[
-            { label: 'Gerçekleşen', value: '12.1 kg', color: '#EF4444' },
-            { label: 'TabNet Tahmini', value: '7.2 kg', color: '#60A5FA' },
-            { label: 'Sapma', value: '+4.9 kg', color: '#F59E0B' },
+            { label: 'Gerçekleşen', value: '12.1 kg CO₂e', color: '#EF4444' },
+            { label: 'TabNet Tahmini', value: '7.2 kg CO₂e', color: '#60A5FA' },
+            { label: 'Net Sapma', value: '+4.9 kg CO₂e', color: '#F59E0B' },
           ].map(({ label, value, color }) => (
             <div
               key={label}
-              className="rounded-xl p-3 text-center"
+              className="rounded-xl p-2.5 text-center"
               style={{ backgroundColor: '#111816', border: '1px solid #1E3A30' }}
             >
-              <p className="text-xs mb-1" style={{ color: '#4B6E5E' }}>{label}</p>
-              <p className="font-mono text-lg font-bold" style={{ color }}>{value}</p>
+              <p className="text-[11px] mb-0.5" style={{ color: '#4B6E5E' }}>{label}</p>
+              <p className="font-mono text-sm font-bold" style={{ color }}>{value}</p>
             </div>
           ))}
         </div>
-        <p className="text-xs mt-3" style={{ color: '#4B6E5E' }}>
-          Tek kullanımlık plastik tüketiminiz haftalık ortalamanın <strong style={{ color: '#F59E0B' }}>%47 üzerinde</strong>.
-          TabNet Sequential Attention mekanizması bu günü müdahale noktası olarak işaretledi.
+
+        <p className="text-xs leading-relaxed" style={{ color: '#86EFAC' }}>
+          TabNet Sequential Attention mekanizması 9. günde standart tüketimin <strong>%47 üzerinde plastik atık</strong> kaydedildiğini tespit etti. 
+          Bu anormalliği sıfırlamak için aşağıdaki <em>"Müdahale Et / Sıfır Atık Ekle"</em> butonunu kullanabilirsiniz.
         </p>
       </div>
+
       <button
+        type="button"
         onClick={onClose}
-        className="rounded-lg flex items-center justify-center shrink-0 transition-colors"
+        className="rounded-lg flex items-center justify-center shrink-0 transition-colors cursor-pointer"
         style={{ width: 28, height: 28, backgroundColor: '#111816', border: '1px solid #1E3A30' }}
         onMouseEnter={e => (e.currentTarget.style.borderColor = '#F59E0B')}
         onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E3A30')}
+        title="Kapat"
       >
-        <X size={14} color="#4B6E5E" />
+        <X size={14} color="#86EFAC" />
       </button>
     </div>
   );
@@ -160,10 +194,15 @@ function AnomalyPanel({ onClose }) {
 // ── Main Component ────────────────────────────────────────────────
 export default function DetailedPredictionChart() {
   const [panelOpen, setPanelOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState('30d'); // '30d' | '7d'
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Filtrelenmiş veri
+  const filteredData = timeRange === '7d' ? DATA.slice(-7) : DATA;
 
   function handleChartClick(data) {
     if (data?.activeLabel === ANOMALY_DAY) {
-      setPanelOpen(prev => !prev);
+      setPanelOpen(true);
     }
   }
 
@@ -182,35 +221,77 @@ export default function DetailedPredictionChart() {
             Gerçekleşen vs. TabNet Tahmini — Günlük Emisyon (kg CO₂e)
           </h3>
           <p className="text-xs mt-1" style={{ color: '#4B6E5E' }}>
-            Anormallik çizgisine tıklayarak sapma detaylarını görüntüleyebilirsiniz.
+            Anormallik çizgisine (G9) tıklayarak sapma detaylarını ve müdahale önerisini görüntüleyin.
           </p>
         </div>
-        <button
-          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium shrink-0 transition-colors"
-          style={{
-            backgroundColor: '#182420',
-            border: '1px solid #1E3A30',
-            color: '#86EFAC',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = '#22C55E')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E3A30')}
-        >
-          Son 30 Gün
-          <ChevronDown size={12} color="#4B6E5E" />
-        </button>
+
+        {/* ── Dropdown Filter (Son 7 Gün / Son 30 Gün) ── */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setDropdownOpen(v => !v)}
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium shrink-0 transition-colors cursor-pointer"
+            style={{
+              backgroundColor: '#182420',
+              border: `1px solid ${dropdownOpen ? '#22C55E' : '#1E3A30'}`,
+              color: '#86EFAC',
+            }}
+            onMouseEnter={e => { if (!dropdownOpen) e.currentTarget.style.borderColor = '#22C55E'; }}
+            onMouseLeave={e => { if (!dropdownOpen) e.currentTarget.style.borderColor = '#1E3A30'; }}
+          >
+            <span>{timeRange === '7d' ? 'Son 7 Gün' : 'Son 30 Gün'}</span>
+            <ChevronDown size={13} color="#4B6E5E" />
+          </button>
+
+          {dropdownOpen && (
+            <div
+              className="absolute right-0 mt-1.5 w-36 rounded-xl p-1 shadow-xl z-20"
+              style={{ backgroundColor: '#111816', border: '1px solid #1E3A30' }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setTimeRange('7d');
+                  setDropdownOpen(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
+                style={{
+                  backgroundColor: timeRange === '7d' ? 'rgba(34,197,94,0.15)' : 'transparent',
+                  color: timeRange === '7d' ? '#22C55E' : '#86EFAC',
+                }}
+              >
+                Son 7 Gün
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTimeRange('30d');
+                  setDropdownOpen(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer"
+                style={{
+                  backgroundColor: timeRange === '30d' ? 'rgba(34,197,94,0.15)' : 'transparent',
+                  color: timeRange === '30d' ? '#22C55E' : '#86EFAC',
+                }}
+              >
+                Son 30 Gün
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Chart ── */}
-      <ResponsiveContainer width="100%" height={340}>
+      <ResponsiveContainer width="100%" height={320}>
         <ComposedChart
-          data={DATA}
+          data={filteredData}
           margin={{ top: 28, right: 8, left: -10, bottom: 0 }}
           onClick={handleChartClick}
           style={{ cursor: 'pointer' }}
         >
           <defs>
             <linearGradient id="gradActualDetail" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#22C55E" stopOpacity={0.2} />
+              <stop offset="0%" stopColor="#22C55E" stopOpacity={0.25} />
               <stop offset="100%" stopColor="#22C55E" stopOpacity={0} />
             </linearGradient>
           </defs>
@@ -222,7 +303,7 @@ export default function DetailedPredictionChart() {
             tick={{ fill: '#4B6E5E', fontSize: 10 }}
             axisLine={{ stroke: '#1E3A30' }}
             tickLine={false}
-            interval={2}
+            interval={timeRange === '7d' ? 0 : 2}
           />
           <YAxis
             tick={{ fill: '#4B6E5E', fontSize: 11 }}
@@ -259,38 +340,40 @@ export default function DetailedPredictionChart() {
             activeDot={{ r: 5, fill: '#22C55E', strokeWidth: 0 }}
           />
 
-          {/* Anomaly reference line */}
-          <ReferenceLine
-            x={ANOMALY_DAY}
-            stroke="#F59E0B"
-            strokeDasharray="4 3"
-            strokeWidth={1.5}
-            label={<AnomalyLabel />}
-          />
+          {/* Anomaly reference line (Sadece 30 günlük aralıkta veya aralıkta varsa görünür) */}
+          {(timeRange === '30d' || filteredData.some(d => d.day === ANOMALY_DAY)) && (
+            <ReferenceLine
+              x={ANOMALY_DAY}
+              stroke="#F59E0B"
+              strokeDasharray="4 3"
+              strokeWidth={1.8}
+              label={<AnomalyLabel onClick={() => setPanelOpen(true)} />}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
 
       {/* ── Legend ── */}
-      <div className="flex items-center gap-5 mt-2 pl-4">
+      <div className="flex items-center gap-5 mt-3 pl-4">
         <div className="flex items-center gap-2">
           <div className="rounded-full" style={{ width: 9, height: 9, backgroundColor: '#22C55E' }} />
-          <span className="text-xs" style={{ color: '#4B6E5E' }}>Gerçekleşen</span>
+          <span className="text-xs" style={{ color: '#4B6E5E' }}>Gerçekleşen Emisyon</span>
         </div>
         <div className="flex items-center gap-2">
           <svg width="16" height="2">
             <line x1="0" y1="1" x2="16" y2="1" stroke="#60A5FA" strokeWidth="2" strokeDasharray="4 2" />
           </svg>
-          <span className="text-xs" style={{ color: '#4B6E5E' }}>TabNet Tahmini</span>
+          <span className="text-xs" style={{ color: '#4B6E5E' }}>TabNet Model Tahmini</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPanelOpen(true)}>
           <svg width="16" height="2">
             <line x1="0" y1="1" x2="16" y2="1" stroke="#F59E0B" strokeWidth="2" strokeDasharray="4 2" />
           </svg>
-          <span className="text-xs" style={{ color: '#4B6E5E' }}>Anormallik</span>
+          <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>⚠️ Anormallik (Tıklayın)</span>
         </div>
       </div>
 
-      {/* ── Collapsible Anomaly Panel ── */}
+      {/* ── Collapsible Anomaly Panel (Açılan bilgi penceresi) ── */}
       {panelOpen && <AnomalyPanel onClose={() => setPanelOpen(false)} />}
     </div>
   );

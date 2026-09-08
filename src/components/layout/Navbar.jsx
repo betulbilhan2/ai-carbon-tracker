@@ -1,4 +1,5 @@
-import { Leaf, Search, Bell, Settings, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Leaf, Search, Bell, Settings, ChevronRight, X } from 'lucide-react';
 
 const NAV_TABS = [
   { id: 'overview',    label: 'Ana Sayfa'           },
@@ -17,7 +18,34 @@ export default function Navbar({
   onOpenSettings,
   onOpenBudget,
 }) {
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
   const pct = Math.min(100, Math.round((WEEKLY_USED / weeklyLimit) * 100));
+
+  // Global Ctrl + K listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(prev => !prev);
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setSearchQuery('');
+    }
+  }, [searchOpen]);
 
   return (
     <header
@@ -138,23 +166,9 @@ export default function Navbar({
 
         {/* Search */}
         <button
-          className="flex items-center gap-2 rounded-lg px-3 text-xs transition-colors"
-          style={{
-            height: '34px',
-            backgroundColor: '#111816',
-            border: '1px solid #1E3A30',
-            color: '#4B6E5E',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = '#22C55E')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E3A30')}
-        >
-          <Search size={13} />
-          <span>⌘K</span>
-        </button>
-
-        {/* Notification Bell */}
-        <button
-          className="relative flex items-center justify-center rounded-lg transition-colors"
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="flex items-center justify-center rounded-lg transition-colors cursor-pointer"
           style={{
             width: '34px',
             height: '34px',
@@ -163,22 +177,104 @@ export default function Navbar({
           }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = '#22C55E')}
           onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E3A30')}
-          title="Bildirimler"
+          title="Hızlı Arama ve Komut Paleti (Ctrl + K)"
         >
-          <Bell size={15} color="#86EFAC" />
-          {/* Amber dot */}
-          <span
-            className="absolute rounded-full"
-            style={{
-              width: '6px',
-              height: '6px',
-              backgroundColor: '#F59E0B',
-              top: '7px',
-              right: '7px',
-              border: '1.5px solid #0A0F0D',
-            }}
-          />
+          <Search size={15} color="#4B6E5E" />
         </button>
+
+        {/* Notification Bell */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setNotificationsOpen(v => !v)}
+            className="relative flex items-center justify-center rounded-lg transition-colors cursor-pointer"
+            style={{
+              width: '34px',
+              height: '34px',
+              backgroundColor: notificationsOpen ? 'rgba(34,197,94,0.15)' : '#111816',
+              border: `1px solid ${notificationsOpen ? '#22C55E' : '#1E3A30'}`,
+            }}
+            onMouseEnter={e => { if (!notificationsOpen) e.currentTarget.style.borderColor = '#22C55E'; }}
+            onMouseLeave={e => { if (!notificationsOpen) e.currentTarget.style.borderColor = '#1E3A30'; }}
+            title="Bildirimler"
+          >
+            <Bell size={15} color={notificationsOpen ? '#22C55E' : '#86EFAC'} />
+            {/* Amber dot */}
+            <span
+              className="absolute rounded-full"
+              style={{
+                width: '6px',
+                height: '6px',
+                backgroundColor: '#F59E0B',
+                top: '7px',
+                right: '7px',
+                border: '1.5px solid #0A0F0D',
+              }}
+            />
+          </button>
+
+          {/* Mini Dropdown Menu */}
+          {notificationsOpen && (
+            <div
+              className="absolute right-0 mt-2 w-80 rounded-2xl p-4 shadow-2xl z-50 animate-fade-in"
+              style={{
+                backgroundColor: '#111816',
+                border: '1px solid #1E3A30',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(34,197,94,0.1)',
+              }}
+            >
+              <div className="flex items-center justify-between pb-2.5 mb-2.5" style={{ borderBottom: '1px solid #1E3A30' }}>
+                <p className="text-xs font-bold" style={{ color: '#F0FDF4' }}>
+                  Bildirimler & Hatırlatmalar
+                </p>
+                <span className="text-[10px] font-mono rounded px-1.5 py-0.5" style={{ backgroundColor: '#182420', color: '#22C55E' }}>
+                  3 Yeni
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {/* Notification 1 */}
+                <div className="p-2.5 rounded-xl transition-colors" style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-base">🎯</span>
+                    <div>
+                      <p className="text-xs font-semibold text-zinc-200">Haftalık Bütçe Durumu</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: '#4B6E5E' }}>
+                        Hedefine yaklaşmaktasın: Kotanın %31'ini kullandın.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notification 2 */}
+                <div className="p-2.5 rounded-xl transition-colors" style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-base">🔥</span>
+                    <div>
+                      <p className="text-xs font-semibold text-zinc-200">Rozet Başarısı</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: '#4B6E5E' }}>
+                        Harika seri! '14 Günlük Seri' rozetini başarıyla koruyorsun!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notification 3 */}
+                <div className="p-2.5 rounded-xl transition-colors" style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-base">🤖</span>
+                    <div>
+                      <p className="text-xs font-semibold text-zinc-200">Yapay Zekâ Önerisi</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: '#4B6E5E' }}>
+                        Bugün toplu taşıma kullanarak 1.8 kg CO₂e tasarruf sağlayabilirsin.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Settings button */}
         <button
@@ -221,6 +317,93 @@ export default function Navbar({
           </span>
         </button>
       </div>
+
+      {/* ── Quick Search Modal (Ctrl + K) ── */}
+      {searchOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setSearchOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl p-5 shadow-2xl animate-fade-in"
+            style={{
+              backgroundColor: '#111816',
+              border: '1px solid #1E3A30',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 25px rgba(34,197,94,0.15)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Input Header */}
+            <div className="flex items-center gap-3 pb-3 border-b border-[#1E3A30]">
+              <Search size={18} color="#22C55E" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Sayfa ara veya işlem seç (örn: Aktivite Ekle, Analizler)..."
+                className="flex-1 bg-transparent text-sm text-zinc-100 placeholder:text-[#4B6E5E] outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                className="rounded-lg p-1 text-[#4B6E5E] hover:text-zinc-200 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Quick Links List */}
+            <div className="mt-3 space-y-1.5 max-h-60 overflow-y-auto">
+              {NAV_TABS.filter(t => t.label.toLowerCase().includes(searchQuery.toLowerCase())).map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    onTabChange(tab.id);
+                    setSearchOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-left transition-colors"
+                  style={{
+                    backgroundColor: activeTab === tab.id ? 'rgba(34,197,94,0.12)' : '#182420',
+                    color: activeTab === tab.id ? '#22C55E' : '#86EFAC',
+                    border: `1px solid ${activeTab === tab.id ? '#22C55E' : '#1E3A30'}`,
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#22C55E')}
+                  onMouseLeave={e => {
+                    if (activeTab !== tab.id) e.currentTarget.style.borderColor = '#1E3A30';
+                  }}
+                >
+                  <span>{tab.label}</span>
+                  <span className="text-[11px] font-mono text-[#4B6E5E]">Git →</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchOpen(false);
+                  onOpenBudget?.();
+                }}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-left transition-colors"
+                style={{ backgroundColor: '#182420', color: '#14B8A6', border: '1px solid #1E3A30' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#14B8A6')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E3A30')}
+              >
+                <span>🎯 Karbon Limiti / Hedef Bütçesini Düzenle</span>
+                <span className="text-[11px] font-mono text-[#4B6E5E]">Aç →</span>
+              </button>
+            </div>
+
+            {/* Footer tips */}
+            <div className="mt-4 pt-3 border-t border-[#1E3A30] flex items-center justify-between text-[11px] text-[#4B6E5E]">
+              <span>Kapatmak için <kbd className="px-1.5 py-0.5 rounded bg-[#182420] border border-[#1E3A30] text-zinc-300">ESC</kbd></span>
+              <span>Açmak için <kbd className="px-1.5 py-0.5 rounded bg-[#182420] border border-[#1E3A30] text-zinc-300">Ctrl + K</kbd></span>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

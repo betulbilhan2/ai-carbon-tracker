@@ -39,8 +39,25 @@ export default function App() {
     setIsSettingsOpen(true);
   }
 
-  function handleSettingsSave({ weeklyLimit: newLimit }) {
+  async function handleSettingsSave({ weeklyLimit: newLimit }) {
     setWeeklyLimit(newLimit);
+    try {
+      await updateWeeklyTarget(1, newLimit);
+      console.log('✅ Haftalık karbon hedefi veritabanında güncellendi:', newLimit);
+    } catch (err) {
+      console.error('Haftalık hedef güncellenirken hata:', err);
+    }
+  }
+
+  const [selectedCategory, setSelectedCategory] = useState('transport');
+
+  function handleNavigateActivity(category = 'transport') {
+    setSelectedCategory(category);
+    setActiveTab('activity');
+  }
+
+  function handleNavigateLeaderboard() {
+    setActiveTab('leaderboard');
   }
 
   // ── Page router ──────────────────────────────────────────────────
@@ -54,18 +71,22 @@ export default function App() {
             taskDone={taskDone}
             weeklyLimit={weeklyLimit}
             onTaskComplete={handleTaskComplete}
-            onNavigateActivity={() => setActiveTab('activity')}
+            onNavigateActivity={handleNavigateActivity}
+            onNavigateLeaderboard={handleNavigateLeaderboard}
           />
         );
       case 'analytics':
         return (
           <AnalyticsPage
-            onNavigateCoach={() => setActiveTab('overview')}
+            onNavigateCoach={(category) => handleNavigateActivity(category || 'waste')}
           />
         );
       case 'activity':
         return (
-          <ActivityPage onActivitySaved={handleActivitySaved} />
+          <ActivityPage 
+            onActivitySaved={handleActivitySaved} 
+            initialCategory={selectedCategory} 
+          />
         );
       case 'leaderboard':
         return <LeaderboardPage />;

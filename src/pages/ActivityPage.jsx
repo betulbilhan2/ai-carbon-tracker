@@ -14,6 +14,7 @@ import {
   createActivity,
   getRecentActivities,
   getCategories,
+  deleteActivity,
 } from '../services/api';
 
 // ── Kategori adı → backend kategori_id map ────────────────────────
@@ -162,8 +163,11 @@ function ErrorToast({ visible, message }) {
 // ── Backend aktivite logunu tablo satırı formatına çevir ──────────
 let tempId = 9000;
 function backendLogToRow(item) {
+  const actualId = item.aktiviteId ?? item.aktivite_id ?? item.id ?? tempId++;
   return {
-    id:       item.aktiviteId ?? tempId++,
+    id:          actualId,
+    aktivite_id: actualId,
+    aktiviteId:  actualId,
     datetime: item.aktiviteTarihi
                 ? new Date(item.aktiviteTarihi).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })
                 : '—',
@@ -174,8 +178,8 @@ function backendLogToRow(item) {
 }
 
 // ── Ana Sayfa ─────────────────────────────────────────────────────
-export default function ActivityPage({ onActivitySaved }) {
-  const [category,  setCategory]  = useState('transport');
+export default function ActivityPage({ onActivitySaved, initialCategory = 'transport' }) {
+  const [category,  setCategory]  = useState(initialCategory);
   const [formData,  setFormData]  = useState(defaultForm());
   const [logs,      setLogs]      = useState([]);
   const [logsLoading, setLogsLoading] = useState(true);
@@ -228,8 +232,11 @@ export default function ActivityPage({ onActivitySaved }) {
       const karbonMiktari = result?.karbonMiktari ?? kg;
 
       // Tablo için satır oluştur (backend yanıtından)
+      const actualId = result?.aktiviteId ?? result?.aktivite_id ?? result?.id ?? tempId++;
       const newLog = {
-        id:       result?.aktiviteId ?? tempId++,
+        id:          actualId,
+        aktivite_id: actualId,
+        aktiviteId:  actualId,
         datetime: new Date().toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }),
         category: result?.kategoriAdi ?? buildDetail(category, formData),
         detail:   buildDetail(category, formData),
@@ -255,10 +262,39 @@ export default function ActivityPage({ onActivitySaved }) {
     }
   }, [category, formData, onActivitySaved]);
 
-  // Yerel log silme (backend delete opsiyonel — cascade silme için)
-  function handleDelete(id) {
-    setLogs(prev => prev.filter(l => l.id !== id));
-  }
+  // ── Aktivite Sil: backend'den sil ve state'i güncelle ───────────
+  const handleDelete = useCallback(async (id) => {
+    console.log("ActivityPage - Silme tetiklendi. ID:", id);
+    if (!id) {
+      console.warn("Geçersiz veya tanımsız silinecek ID!");
+      return;
+    }
+
+    // Silinen kaydı tespit et
+    const targetLog = logs.find(a => (a.aktivite_id ?? a.id ?? a.aktiviteId) === id);
+
+    try {
+      // Backend'e DELETE isteği at
+      await deleteActivity(id);
+
+      // Listeden anında kaldır
+      setLogs(prev => prev.filter(item => (item.aktivite_id ?? item.id ?? item.aktiviteId) !== id));
+
+      // Toast bildirimi göster
+      setToastMsg('🗑️ Aktivite başarıyla silindi ve veritabanı güncellendi.');
+      setToastOn(true);
+      setTimeout(() => setToastOn(false), 3000);
+
+      // Üst barda ve Dashboard'da emisyon değerini güncellemek için eksi kg gönder
+      if (targetLog && targetLog.kg) {
+        onActivitySaved?.({ kg: -targetLog.kg, category: targetLog.category });
+      }
+    } catch (err) {
+      console.error("Silme hatası:", err);
+      setErrorMsg(`Silme işlemi başarısız: ${err.message}`);
+      setTimeout(() => setErrorMsg(''), 4000);
+    }
+  }, [logs, onActivitySaved]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -275,6 +311,7 @@ export default function ActivityPage({ onActivitySaved }) {
           category={category}
           formData={formData}
           setFormData={setFormData}
+          onReset={() => setFormData(defaultForm())}
         />
         <LiveEstimatePanel
           category={category}

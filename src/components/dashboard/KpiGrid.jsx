@@ -109,7 +109,7 @@ function StreakCard({ gunlukSeri = 0 }) {
 }
 
 // ── Card 3: Eco-Score (canlı veri) ────────────────────────────────
-function EcoScoreCard({ ecoPuan = 0, aktifRozet = 'İlk Adım' }) {
+function EcoScoreCard({ ecoPuan = 0, aktifRozet = 'İlk Adım', onNavigateLeaderboard }) {
   return (
     <KpiCard accentColor="#14B8A6">
       <CardLabel>Eco-Score</CardLabel>
@@ -123,12 +123,15 @@ function EcoScoreCard({ ecoPuan = 0, aktifRozet = 'İlk Adım' }) {
         </p>
       </div>
       <div className="mt-3">
-        <span
-          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
-          style={{ backgroundColor: 'rgba(20,184,166,0.15)', color: '#14B8A6' }}
+        <button
+          type="button"
+          onClick={onNavigateLeaderboard}
+          title="Liderlik Tablosuna Git"
+          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105"
+          style={{ backgroundColor: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.3)' }}
         >
-          🏫 #14 Üniversitende
-        </span>
+          🏫 #14 Üniversitende →
+        </button>
       </div>
     </KpiCard>
   );
@@ -166,6 +169,7 @@ export default function KpiGrid({
   ecoPuan           = 0,
   aktifRozet        = 'İlk Adım',
   toplamTasarruf    = 0,
+  onNavigateLeaderboard,
 }) {
   return (
     <div className="grid grid-cols-4 gap-4">
@@ -175,7 +179,11 @@ export default function KpiGrid({
         butceYuzdesi={butceYuzdesi}
       />
       <StreakCard        gunlukSeri={gunlukSeri} />
-      <EcoScoreCard     ecoPuan={ecoPuan}        aktifRozet={aktifRozet} />
+      <EcoScoreCard     
+        ecoPuan={ecoPuan}        
+        aktifRozet={aktifRozet} 
+        onNavigateLeaderboard={onNavigateLeaderboard} 
+      />
       <SavingsCard      toplamTasarruf={toplamTasarruf} />
     </div>
   );

@@ -1,56 +1,128 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Clock3, Bot, Zap, Globe2 } from 'lucide-react';
+import { CheckCircle2, Clock3, Bot, Zap, Globe2, Sparkles, Check } from 'lucide-react';
+import { addUserPoints } from '../../services/api';
+
+const ALTERNATIVE_TASKS = [
+  {
+    metin: "Bugün asansör yerine merdiven kullanarak 0.3 kg emisyon önle.",
+    tasarruf: "Tahmini 0.3 kg CO₂e tasarruf",
+    skor: 6.8
+  },
+  {
+    metin: "Kısa mesafeli kampüs içi seyahatlerde yürümeyi tercih et.",
+    tasarruf: "Tahmini 0.8 kg CO₂e tasarruf",
+    skor: 7.5
+  },
+  {
+    metin: "Kullanmadığın çalışma lambasını ve monitörü kapat.",
+    tasarruf: "Tahmini 0.5 kg CO₂e tasarruf",
+    skor: 6.2
+  },
+  {
+    metin: "Bugün tek kullanımlık bardak yerine kendi termosunu kullan.",
+    tasarruf: "Tahmini 0.2 kg CO₂e ve sıfır atık",
+    skor: 8.0
+  }
+];
 
 export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
-  const [done,      setDone]      = useState(false);
-  const [postponed, setPostponed] = useState(false);
-  const [applying,  setApplying]  = useState(false);
-  const [barWidth,  setBarWidth]  = useState(0);
+  const [done,          setDone]          = useState(false);
+  const [successStatus, setSuccessStatus] = useState(false);
+  const [applying,      setApplying]      = useState(false);
+  const [barWidth,      setBarWidth]      = useState(0);
+  const [taskIndex,     setTaskIndex]     = useState(0);
+  const [toastMessage,  setToastMessage]  = useState('');
+
+  // Aktif görev metni ve etki skoru (backend'den veya alternatif listeden)
+  const currentTask = (taskIndex === 0 && oneri) 
+    ? {
+        metin: oneri.oneriMetni,
+        tasarruf: oneri.potansiyelTasarruf || 'Tahmini 1.8 kg CO₂e tasarruf',
+        skor: oneri.etkiSkoru || 7.2,
+      }
+    : ALTERNATIVE_TASKS[(taskIndex) % ALTERNATIVE_TASKS.length];
 
   // Motivasyon çubuğu animasyonu
   useEffect(() => {
-    const pct = oneri ? Math.round(Math.min(oneri.etkiSkoru * 10, 100)) : 72;
-    const timer = setTimeout(() => setBarWidth(pct), 300);
+    const pct = Math.round(Math.min((currentTask?.skor || 7.2) * 10, 100));
+    setBarWidth(0);
+    const timer = setTimeout(() => setBarWidth(pct), 200);
     return () => clearTimeout(timer);
-  }, [oneri]);
+  }, [taskIndex, oneri, currentTask?.skor]);
 
+  // ── Görevi Kabul Et (+50 Puan) ──────────────────────────────────
   async function handleComplete() {
-    if (done || postponed || applying) return;
+    if (done || applying) return;
     setApplying(true);
+
     try {
+      // 1. Backend'de öneriyi uygula ve +50 Eco-Puan ekle
       if (oneri?.oneriId && onApply) {
         await onApply(oneri.oneriId);
       }
-      setDone(true);
-      onComplete?.();
-    } catch {
-      // Hata olsa da UI'yi tamamlandı yap (optimistic update)
-      setDone(true);
-      onComplete?.();
+      await addUserPoints(1, 50);
+
+      // 2. Başarı durumu ve onay bildirimi
+      setSuccessStatus(true);
+      setToastMessage('🎉 Görev tamamlandı! +50 Eco-Puan hesabına tanımlandı.');
+      onComplete?.(50);
+
+      // 3. 2 saniye onay göster, ardından yeni bir öneriye geç
+      setTimeout(() => {
+        setSuccessStatus(false);
+        setDone(false);
+        setTaskIndex(prev => prev + 1);
+        setToastMessage('');
+      }, 2500);
+
+    } catch (err) {
+      console.warn('Öneri uygulanırken yerel güncelleme yapıldı:', err);
+      setSuccessStatus(true);
+      setToastMessage('🎉 Görev tamamlandı! +50 Eco-Puan hesabına tanımlandı.');
+      onComplete?.(50);
+      setTimeout(() => {
+        setSuccessStatus(false);
+        setDone(false);
+        setTaskIndex(prev => prev + 1);
+        setToastMessage('');
+      }, 2500);
     } finally {
       setApplying(false);
     }
   }
 
+  // ── Yarına Ertele (Alternatif Görev Getir) ────────────────────────
   function handlePostpone() {
-    if (done || postponed) return;
-    setPostponed(true);
+    if (applying || successStatus) return;
+    setTaskIndex(prev => prev + 1);
+    setToastMessage('⏭ Yeni alternatif mikro görev getirildi.');
+    setTimeout(() => setToastMessage(''), 2500);
   }
-
-  // Görev metni: backend'den veya varsayılan
-  const gorevMetni  = oneri?.oneriMetni   ?? 'Bugün öğle yemeğini vejetaryen seç.';
-  const etkiSkoru   = oneri?.etkiSkoru    ?? 7.2;
-  const potansiyel  = oneri?.potansiyelTasarruf ?? 'Tahmini 1.8 kg CO₂e tasarruf';
 
   return (
     <div
-      className="rounded-2xl p-6 flex flex-col gap-4 transition-all"
+      className="rounded-2xl p-6 flex flex-col justify-between gap-4 transition-all relative overflow-hidden"
       style={{
         backgroundColor: '#111816',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px #1E3A30',
         borderLeft: '4px solid #22C55E',
       }}
     >
+      {/* Toast Bildirimi */}
+      {toastMessage && (
+        <div
+          className="absolute top-3 right-4 rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 z-20 animate-fade-in"
+          style={{
+            backgroundColor: 'rgba(34,197,94,0.18)',
+            border: '1px solid #22C55E',
+            color: '#22C55E',
+          }}
+        >
+          <Sparkles size={13} />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* ── Rozetler ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <span
@@ -67,20 +139,12 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
           <Zap size={12} />
           Fogg B=MAP
         </span>
-        {done && (
+        {successStatus && (
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-            style={{ backgroundColor: 'rgba(34,197,94,0.2)', color: '#22C55E' }}
+            style={{ backgroundColor: 'rgba(34,197,94,0.25)', color: '#22C55E' }}
           >
-            ✅ Tamamlandı!
-          </span>
-        )}
-        {postponed && !done && (
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-            style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}
-          >
-            ⏭ Ertelendi
+            ✅ Tamamlandı (+50 Pts)
           </span>
         )}
       </div>
@@ -88,16 +152,13 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
       {/* ── Görev Metni ── */}
       <div>
         <h3
-          className="text-base font-bold leading-snug"
-          style={{
-            color: done ? '#4B6E5E' : '#F0FDF4',
-            textDecoration: done ? 'line-through' : 'none',
-          }}
+          className="text-base font-bold leading-snug transition-all duration-300"
+          style={{ color: '#F0FDF4' }}
         >
-          {gorevMetni}
+          {currentTask.metin}
         </h3>
         <p className="text-xs mt-2 leading-relaxed" style={{ color: '#4B6E5E' }}>
-          {potansiyel}
+          {currentTask.tasarruf}
         </p>
       </div>
 
@@ -108,7 +169,7 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
           style={{ backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' }}
         >
           <Globe2 size={12} />
-          Etki Skoru: {etkiSkoru.toFixed(1)} / 10
+          Etki Skoru: {Number(currentTask.skor).toFixed(1)} / 10
         </span>
         <span
           className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
@@ -123,7 +184,7 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-medium" style={{ color: '#4B6E5E' }}>
-            Motivasyon Skoru
+            Fogg Davranışsal Motivasyon
           </span>
           <span className="text-xs font-mono font-bold" style={{ color: '#F59E0B' }}>
             {barWidth} / 100
@@ -131,49 +192,59 @@ export default function AiMicroTaskCard({ onComplete, oneri, onApply }) {
         </div>
         <div className="w-full rounded-full overflow-hidden" style={{ height: '6px', backgroundColor: '#1E3A30' }}>
           <div
-            className="h-full rounded-full"
+            className="h-full rounded-full transition-all duration-700"
             style={{
               width: `${barWidth}%`,
               background: 'linear-gradient(90deg, #F59E0B, #22C55E)',
-              transition: 'width 1s cubic-bezier(0.4,0,0.2,1)',
             }}
           />
         </div>
       </div>
 
       {/* ── Aksiyon Butonları ── */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 mt-1">
         <button
+          type="button"
           onClick={handleComplete}
-          disabled={done || postponed || applying}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200"
+          disabled={applying || successStatus}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer"
           style={{
             height: '44px',
-            backgroundColor: done ? '#1E3A30' : '#22C55E',
-            color: done ? '#4B6E5E' : '#0A0F0D',
-            cursor: (done || postponed || applying) ? 'not-allowed' : 'pointer',
-            opacity: (postponed || applying) ? 0.6 : 1,
+            backgroundColor: successStatus ? '#16A34A' : '#22C55E',
+            color: '#0A0F0D',
+            boxShadow: successStatus ? '0 0 16px rgba(34,197,94,0.4)' : 'none',
           }}
-          onMouseEnter={e => { if (!done && !postponed && !applying) e.currentTarget.style.backgroundColor = '#16A34A'; }}
-          onMouseLeave={e => { if (!done && !postponed && !applying) e.currentTarget.style.backgroundColor = '#22C55E'; }}
+          onMouseEnter={e => { if (!successStatus && !applying) e.currentTarget.style.backgroundColor = '#16A34A'; }}
+          onMouseLeave={e => { if (!successStatus && !applying) e.currentTarget.style.backgroundColor = '#22C55E'; }}
         >
-          <CheckCircle2 size={16} />
-          {applying ? 'Kaydediliyor…' : done ? 'Tamamlandı!' : '✅ Kabul Et (+50 Puan)'}
+          {successStatus ? (
+            <>
+              <Check size={16} className="stroke-[3]" />
+              <span>Tamamlandı ✓</span>
+            </>
+          ) : applying ? (
+            <span>Puan Ekleniyor…</span>
+          ) : (
+            <>
+              <CheckCircle2 size={16} />
+              <span>✅ Kabul Et (+50 Puan)</span>
+            </>
+          )}
         </button>
 
         <button
+          type="button"
           onClick={handlePostpone}
-          disabled={done || postponed}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200"
+          disabled={applying || successStatus}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer"
           style={{
             height: '44px',
             backgroundColor: 'transparent',
-            color: postponed ? '#4B6E5E' : '#86EFAC',
+            color: '#86EFAC',
             border: '1px solid #1E3A30',
-            cursor: (done || postponed) ? 'not-allowed' : 'pointer',
           }}
-          onMouseEnter={e => { if (!done && !postponed) e.currentTarget.style.borderColor = '#22C55E'; }}
-          onMouseLeave={e => { if (!done && !postponed) e.currentTarget.style.borderColor = '#1E3A30'; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#22C55E'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E3A30'; }}
         >
           ⏭ Yarına Ertele
         </button>

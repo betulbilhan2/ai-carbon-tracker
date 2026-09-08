@@ -6,7 +6,13 @@ import AiMicroTaskCard    from '../components/dashboard/AiMicroTaskCard';
 import QuickLogger        from '../components/dashboard/QuickLogger';
 import { getDashboardSummary, applyRecommendation } from '../services/api';
 
-export default function OverviewPage({ onTaskComplete, onNavigateActivity, weeklyLimit = 56 }) {
+export default function OverviewPage({ 
+  onTaskComplete, 
+  onNavigateActivity, 
+  onNavigateLeaderboard,
+  weeklyLimit = 56,
+  ecoScore
+}) {
   const [summary,  setSummary]  = useState(null);
   const [loading,  setLoading]  = useState(true);
 
@@ -32,7 +38,7 @@ export default function OverviewPage({ onTaskComplete, onNavigateActivity, weekl
     try {
       await applyRecommendation(oneriId, 1);
       await fetchSummary(); // Güncel istatistikleri ve yeni öneriyi getir
-      onTaskComplete?.();
+      onTaskComplete?.(50);
     } catch (err) {
       console.error('Öneri uygulanırken hata:', err);
     }
@@ -41,6 +47,7 @@ export default function OverviewPage({ onTaskComplete, onNavigateActivity, weekl
   const effectiveLimit = summary?.haftalikLimit ?? weeklyLimit;
   const haftalikKarbon = summary?.haftalikToplamKarbon ?? 0;
   const butceYuzdesi   = summary?.butceYuzdesi ?? Math.round((haftalikKarbon / (effectiveLimit || 1)) * 100);
+  const currentScore   = ecoScore ?? summary?.ecoPuan ?? 847;
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,9 +73,10 @@ export default function OverviewPage({ onTaskComplete, onNavigateActivity, weekl
         haftalikKarbon={haftalikKarbon}
         butceYuzdesi={butceYuzdesi}
         gunlukSeri={summary?.gunlukSeri               ?? 0}
-        ecoPuan={summary?.ecoPuan                     ?? 0}
+        ecoPuan={currentScore}
         aktifRozet={summary?.aktifRozet               ?? 'İlk Adım'}
         toplamTasarruf={summary?.toplamTasarruf        ?? 0}
+        onNavigateLeaderboard={onNavigateLeaderboard}
       />
 
       {/* ── Satır 2: Dinamik Grafikler (%60 / %40) ── */}

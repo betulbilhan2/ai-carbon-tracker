@@ -10,6 +10,7 @@ namespace EcoTrack.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Route("api/activities")]
 [Produces("application/json")]
 public class ActivityController : ControllerBase
 {
@@ -315,15 +316,17 @@ public class ActivityController : ControllerBase
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // DELETE /api/activities/{id}
+    // DELETE /api/activities/{id} veya /api/Activity/{id}
     // ═══════════════════════════════════════════════════════════════
+    /// <summary>
+    /// Belirtilen aktiviteyi ve bağlı karbon hesaplamasını siler.
+    /// </summary>
     [HttpDelete("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteActivity(int id, [FromQuery] int kullaniciId = 1)
+    public async Task<IActionResult> DeleteActivity(int id)
     {
-        var aktivite = await _context.Activities
-            .FirstOrDefaultAsync(a => a.AktiviteId == id && a.KullaniciId == kullaniciId);
+        var aktivite = await _context.Activities.FindAsync(id);
 
         if (aktivite is null)
             return NotFound(new { message = $"Aktivite bulunamadı. ID: {id}" });
@@ -331,8 +334,8 @@ public class ActivityController : ControllerBase
         _context.Activities.Remove(aktivite);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("🗑️ Aktivite silindi. AktiviteId={Id}", id);
-        return NoContent();
+        _logger.LogInformation("🗑️ Aktivite başarıyla silindi. AktiviteId={Id}", id);
+        return Ok(new { message = "Aktivite silindi", id = id });
     }
 }
 

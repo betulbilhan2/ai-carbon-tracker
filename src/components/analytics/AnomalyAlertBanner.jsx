@@ -33,8 +33,9 @@ export default function AnomalyAlertBanner({ onNavigate }) {
 
       {/* CTA Button */}
       <button
-        onClick={onNavigate}
-        className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold shrink-0 self-center transition-all duration-200"
+        type="button"
+        onClick={() => onNavigate?.('waste')}
+        className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold shrink-0 self-center transition-all duration-200 cursor-pointer"
         style={{
           backgroundColor: 'transparent',
           border: '1px solid #F59E0B',
@@ -46,8 +47,9 @@ export default function AnomalyAlertBanner({ onNavigate }) {
         onMouseLeave={e => {
           e.currentTarget.style.backgroundColor = 'transparent';
         }}
+        title="Plastik tüketimini dengelemek için Sıfır Atık aktivitesi ekle"
       >
-        Koça Git / Müdahale Et
+        <span>Müdahale Et / Sıfır Atık Ekle</span>
         <ArrowRight size={13} />
       </button>
     </div>
