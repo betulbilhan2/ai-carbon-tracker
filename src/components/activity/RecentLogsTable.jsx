@@ -1,4 +1,5 @@
 import { Trash2 } from 'lucide-react';
+import { formatTurkishDateTime } from './activityConstants';
 
 // ── Category display helpers ──────────────────────────────────────
 const CATEGORY_META = {
@@ -8,15 +9,9 @@ const CATEGORY_META = {
   waste:     { emoji: '♻️', label: 'Sıfır Atık',  color: '#60A5FA' },
 };
 
-// ── Format datetime for display ───────────────────────────────────
+// ── Format datetime for display (Türkiye Standardı DD.MM.YYYY HH:mm) ──
 function formatDT(str) {
-  if (!str) return '—';
-  const d = new Date(str);
-  if (isNaN(d)) return str;
-  return d.toLocaleString('tr-TR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+  return formatTurkishDateTime(str);
 }
 
 // ── Component ─────────────────────────────────────────────────────

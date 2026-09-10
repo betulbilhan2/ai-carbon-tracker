@@ -17,10 +17,10 @@ export default function UserRankBanner({ scope = 'university', userRank = null, 
   const bolum = user?.bolum || '';
   const institutionText = [universite, bolum].filter(Boolean).join(' · ');
 
-  // Üniversite kapsamında canlı veri varsa onu kullan, diğer kapsamlarda (Şehir, TR) kapsam istatistiğini göster
-  const currentRank  = (scope === 'university' && userRank) ? userRank : (userRank ?? scopeMeta.rank);
+  // Kapsama göre doğrudan hesaplanan kullanıcı sırası ve toplam kullanıcı sayısını göster
+  const currentRank  = userRank ?? scopeMeta.rank;
   const currentScore = userScore ?? (user?.ecoScore ?? user?.ecoPuan ?? 100);
-  const totalCount   = (scope === 'university' && totalUsers) ? totalUsers : (totalUsers ?? scopeMeta.total);
+  const totalCount   = totalUsers ?? scopeMeta.total;
 
   const nextTierThreshold = Math.ceil((currentScore + 50) / 100) * 100;
   const ptsLeft = Math.max(0, nextTierThreshold - currentScore);

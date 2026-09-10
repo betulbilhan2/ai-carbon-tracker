@@ -138,17 +138,20 @@ function EcoScoreCard({ ecoPuan = 0, aktifRozet = 'İlk Adım', onNavigateLeader
 }
 
 // ── Card 4: Toplam Tasarruf (canlı veri) ──────────────────────────
-function SavingsCard({ toplamTasarruf = 0 }) {
-  const trees = (toplamTasarruf / 8).toFixed(1);
+function SavingsCard({ toplamTasarruf = 0, activitySavings, aiSimulatedSavings }) {
+  const trees = (Number(toplamTasarruf) / 8).toFixed(1);
+  const detailText = (activitySavings !== undefined && aiSimulatedSavings !== undefined)
+    ? `(${activitySavings} kg aktivite + ${aiSimulatedSavings} kg YZ potansiyeli)`
+    : 'Modellenen toplam tasarruf';
 
   return (
     <KpiCard accentColor="#60A5FA">
       <CardLabel>Toplam Tasarruf</CardLabel>
       <div className="flex items-end gap-2 mt-1">
-        <CardValue value={`${toplamTasarruf.toFixed(1)} kg`} color="#60A5FA" />
+        <CardValue value={`${Number(toplamTasarruf).toFixed(1)} kg`} color="#60A5FA" />
       </div>
-      <p className="text-xs mt-1" style={{ color: '#4B6E5E' }}>
-        CO₂e — Modellenen toplam tasarruf
+      <p className="text-xs mt-1 truncate" title={detailText} style={{ color: '#4B6E5E' }}>
+        CO₂e — {detailText}
       </p>
       <div className="flex items-center gap-1.5 mt-3">
         <TreePine size={14} color="#22C55E" />
@@ -169,6 +172,8 @@ export default function KpiGrid({
   ecoPuan           = 0,
   aktifRozet        = 'İlk Adım',
   toplamTasarruf    = 0,
+  activitySavings,
+  aiSimulatedSavings,
   onNavigateLeaderboard,
 }) {
   return (
@@ -184,7 +189,11 @@ export default function KpiGrid({
         aktifRozet={aktifRozet} 
         onNavigateLeaderboard={onNavigateLeaderboard} 
       />
-      <SavingsCard      toplamTasarruf={toplamTasarruf} />
+      <SavingsCard      
+        toplamTasarruf={toplamTasarruf} 
+        activitySavings={activitySavings}
+        aiSimulatedSavings={aiSimulatedSavings}
+      />
     </div>
   );
 }

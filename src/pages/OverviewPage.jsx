@@ -14,7 +14,7 @@ export default function OverviewPage({
   weeklyLimit = 56,
   ecoScore
 }) {
-  const { user } = useAuth();
+  const { user, latestAiRecommendation } = useAuth();
   const userId = user?.kullaniciId || 1;
   const [summary,  setSummary]  = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -50,7 +50,12 @@ export default function OverviewPage({
   const effectiveLimit = summary?.haftalikLimit ?? weeklyLimit;
   const haftalikKarbon = summary?.haftalikToplamKarbon ?? 0;
   const butceYuzdesi   = summary?.butceYuzdesi ?? Math.round((haftalikKarbon / (effectiveLimit || 1)) * 100);
-  const currentScore   = ecoScore ?? summary?.ecoPuan ?? 847;
+  const currentScore   = Number(user?.ecoScore ?? user?.ecoPuan ?? ecoScore ?? 100);
+  const currentStreak  = Number(user?.currentStreak ?? user?.streak ?? user?.gunlukSeri ?? 1);
+
+  const activitySavings = Number((summary?.toplamTasarruf ?? 12.4).toFixed(1));
+  const aiSimulatedSavings = Number((latestAiRecommendation?.simulatedSavingKgWeek ?? 3.2).toFixed(1));
+  const combinedSavings = Number((activitySavings + aiSimulatedSavings).toFixed(1));
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,10 +80,12 @@ export default function OverviewPage({
         weeklyLimit={effectiveLimit}
         haftalikKarbon={haftalikKarbon}
         butceYuzdesi={butceYuzdesi}
-        gunlukSeri={summary?.gunlukSeri               ?? 0}
+        gunlukSeri={currentStreak}
         ecoPuan={currentScore}
         aktifRozet={summary?.aktifRozet               ?? 'İlk Adım'}
-        toplamTasarruf={summary?.toplamTasarruf        ?? 0}
+        toplamTasarruf={combinedSavings}
+        activitySavings={activitySavings}
+        aiSimulatedSavings={aiSimulatedSavings}
         onNavigateLeaderboard={onNavigateLeaderboard}
       />
 
@@ -97,6 +104,8 @@ export default function OverviewPage({
           onComplete={onTaskComplete}
           oneri={summary?.gununOnerisi ?? null}
           onApply={handleApplyRecommendation}
+          kategoriDagilimi={summary?.kategoriDagilimi ?? []}
+          summary={summary}
         />
         <QuickLogger onNavigateActivity={onNavigateActivity} />
       </div>

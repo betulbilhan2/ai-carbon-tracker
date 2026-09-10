@@ -5,6 +5,7 @@ import {
   MEAL_TYPES,
   WASTE_TYPES,
   nowDateTimeLocal,
+  formatTurkishDateTime,
 } from './activityConstants';
 
 const NOTE_PLACEHOLDERS = {
@@ -77,7 +78,7 @@ function DateTimeField({ value, onChange, onReset }) {
     <div>
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold" style={{ color: '#4B6E5E' }}>
-          Tarih &amp; Saat
+          Tarih &amp; Saat (Türkiye Standardı)
         </p>
         {onReset && (
           <button
@@ -108,6 +109,14 @@ function DateTimeField({ value, onChange, onReset }) {
         onFocus={e => (e.target.style.borderColor = '#22C55E')}
         onBlur={e => (e.target.style.borderColor = '#1E3A30')}
       />
+      <div className="flex items-center justify-between mt-1.5 px-1">
+        <span className="text-[11px] font-mono" style={{ color: '#22C55E' }}>
+          📅 Kayıt Formatı: {formatTurkishDateTime(value)}
+        </span>
+        <span className="text-[10px]" style={{ color: '#4B6E5E' }}>
+          (DD.MM.YYYY HH:mm)
+        </span>
+      </div>
     </div>
   );
 }

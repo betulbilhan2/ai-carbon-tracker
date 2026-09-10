@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronDown, X, AlertTriangle, Sparkles } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -11,50 +11,15 @@ import {
   Tooltip,
   ReferenceLine,
 } from 'recharts';
-
-// ── Mock 30-day data ──────────────────────────────────────────────
-const DATA = [
-  { day: 'G1',  actual: 6.2,  predicted: 6.5  },
-  { day: 'G2',  actual: 7.0,  predicted: 6.7  },
-  { day: 'G3',  actual: 5.8,  predicted: 6.4  },
-  { day: 'G4',  actual: 6.9,  predicted: 6.6  },
-  { day: 'G5',  actual: 8.1,  predicted: 7.0  },
-  { day: 'G6',  actual: 9.3,  predicted: 7.4  },
-  { day: 'G7',  actual: 7.2,  predicted: 7.1  },
-  { day: 'G8',  actual: 6.5,  predicted: 6.8  },
-  { day: 'G9',  actual: 12.1, predicted: 7.2  }, // ← Anormallik
-  { day: 'G10', actual: 7.9,  predicted: 7.3  },
-  { day: 'G11', actual: 6.8,  predicted: 6.9  },
-  { day: 'G12', actual: 7.3,  predicted: 7.0  },
-  { day: 'G13', actual: 8.4,  predicted: 7.5  },
-  { day: 'G14', actual: 6.9,  predicted: 7.1  },
-  { day: 'G15', actual: 5.9,  predicted: 6.3  },
-  { day: 'G16', actual: 7.1,  predicted: 6.8  },
-  { day: 'G17', actual: 6.4,  predicted: 6.6  },
-  { day: 'G18', actual: 8.8,  predicted: 7.6  },
-  { day: 'G19', actual: 7.6,  predicted: 7.2  },
-  { day: 'G20', actual: 6.3,  predicted: 6.7  },
-  { day: 'G21', actual: 7.0,  predicted: 6.9  },
-  { day: 'G22', actual: 9.1,  predicted: 7.8  },
-  { day: 'G23', actual: 6.7,  predicted: 7.0  },
-  { day: 'G24', actual: 7.5,  predicted: 7.2  },
-  { day: 'G25', actual: 6.2,  predicted: 6.6  },
-  { day: 'G26', actual: 8.0,  predicted: 7.4  },
-  { day: 'G27', actual: 7.3,  predicted: 7.1  },
-  { day: 'G28', actual: 6.8,  predicted: 6.9  },
-  { day: 'G29', actual: 7.1,  predicted: 7.0  },
-  { day: 'G30', actual: 6.4,  predicted: 6.8  },
-];
-
-const ANOMALY_DAY = 'G9';
+import { useAuth } from '../../context/AuthContext';
 
 // ── Custom Tooltip ────────────────────────────────────────────────
-function CustomTooltip({ active, payload, label }) {
+function CustomTooltip({ active, payload, label, anomalyDay }) {
   if (!active || !payload?.length) return null;
   const actual    = payload.find(p => p.dataKey === 'actual');
   const predicted = payload.find(p => p.dataKey === 'predicted');
   const diff      = actual && predicted ? (actual.value - predicted.value).toFixed(1) : null;
-  const isAnomaly = label === ANOMALY_DAY;
+  const isAnomaly = label === anomalyDay;
 
   return (
     <div
@@ -106,7 +71,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 // ── Anomaly Reference Line Label ──────────────────────────────────
-function AnomalyLabel({ viewBox, onClick }) {
+function AnomalyLabel({ viewBox, onClick, labelText }) {
   const { x } = viewBox;
   return (
     <g onClick={onClick} style={{ cursor: 'pointer' }}>
@@ -128,14 +93,17 @@ function AnomalyLabel({ viewBox, onClick }) {
         fontSize={10}
         fontWeight="bold"
       >
-        ⚠️ Anormallik (G9)
+        ⚠️ {labelText || 'Anormallik'}
       </text>
     </g>
   );
 }
 
 // ── Anomaly Detail Toast/Panel ────────────────────────────────────
-function AnomalyPanel({ onClose }) {
+function AnomalyPanel({ onClose, anomalyData, dailyPredicted, message }) {
+  const actualVal = anomalyData?.actual ?? 0;
+  const diffVal = (actualVal - dailyPredicted).toFixed(1);
+
   return (
     <div
       className="mt-4 rounded-xl p-4 flex items-start justify-between gap-4 animate-fade-in"
@@ -149,15 +117,15 @@ function AnomalyPanel({ onClose }) {
         <div className="flex items-center gap-2 mb-2">
           <AlertTriangle size={18} color="#F59E0B" />
           <p className="text-sm font-bold" style={{ color: '#F59E0B' }}>
-            Tespit Edilen Anormallik: 9. Günde %47 Plastik Tüketim Aşımı
+            Tespit Edilen Anormallik: {anomalyData?.day} Günü Sapması
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 my-3">
           {[
-            { label: 'Gerçekleşen', value: '12.1 kg CO₂e', color: '#EF4444' },
-            { label: 'TabNet Tahmini', value: '7.2 kg CO₂e', color: '#60A5FA' },
-            { label: 'Net Sapma', value: '+4.9 kg CO₂e', color: '#F59E0B' },
+            { label: 'Gerçekleşen', value: `${actualVal} kg CO₂e`, color: '#EF4444' },
+            { label: 'TabNet Tahmini', value: `${dailyPredicted} kg CO₂e`, color: '#60A5FA' },
+            { label: 'Net Sapma', value: `+${diffVal} kg CO₂e`, color: '#F59E0B' },
           ].map(({ label, value, color }) => (
             <div
               key={label}
@@ -171,8 +139,7 @@ function AnomalyPanel({ onClose }) {
         </div>
 
         <p className="text-xs leading-relaxed" style={{ color: '#86EFAC' }}>
-          TabNet Sequential Attention mekanizması 9. günde standart tüketimin <strong>%47 üzerinde plastik atık</strong> kaydedildiğini tespit etti. 
-          Bu anormalliği sıfırlamak için aşağıdaki <em>"Müdahale Et / Sıfır Atık Ekle"</em> butonunu kullanabilirsiniz.
+          {message || `TabNet modeli bu günde standart tüketim beklentisinin üzerinde karbon emisyonu tespit etti. Günlük ortalamayı ${dailyPredicted} kg CO₂e seviyesine çekmek için yaşam tarzı optimizasyonlarını uygulayın.`}
         </p>
       </div>
 
@@ -192,16 +159,79 @@ function AnomalyPanel({ onClose }) {
 }
 
 // ── Main Component ────────────────────────────────────────────────
-export default function DetailedPredictionChart() {
+export default function DetailedPredictionChart({ summary, activities = [], latestAiRecommendation: propAiRec }) {
+  const { latestAiRecommendation: contextAiRec } = useAuth();
+  const aiRec = propAiRec || contextAiRec;
+
   const [panelOpen, setPanelOpen] = useState(false);
-  const [timeRange, setTimeRange] = useState('30d'); // '30d' | '7d'
+  const [timeRange, setTimeRange] = useState('7d'); // '7d' | '30d'
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Filtrelenmiş veri
-  const filteredData = timeRange === '7d' ? DATA.slice(-7) : DATA;
+  // 1. "TabNet Model Tahmini" referans çizgisini modelin günlük beklentisine (expectedWeeklyKg / 7) sabitle
+  const expectedWeekly = Number(aiRec?.expectedWeeklyKg ?? aiRec?.expected_weekly_kg ?? 22.0);
+  const dailyPredicted = Number((expectedWeekly / 7).toFixed(2));
+
+  // 2. Gerçekleşen çizgiyi kullanıcının girdiği gerçek aktivite verileriyle ve yerel saat dilimine göre çiz
+  const chartData = useMemo(() => {
+    // Yerel takvim tarihi yardımcısı (tr-TR yerel tarih nesnesi üzerinden)
+    const getLocalDateStr = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('tr-TR');
+    };
+
+    const days = timeRange === '7d' ? 7 : 30;
+    const result = [];
+    const today = new Date();
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const targetDateStr = getLocalDateStr(d);
+      const dayName = d.toLocaleDateString('tr-TR', { weekday: 'short' });
+      const displayLabel = `${dayName} ${d.getDate()}.${d.getMonth() + 1}`;
+
+      // Bu yerel takvim tarihindeki gerçek aktivitelerin toplamı
+      let daySum = 0;
+      if (Array.isArray(activities) && activities.length > 0) {
+        daySum = activities
+          .filter(act => {
+            const dateStr = act?.aktiviteTarihi || act?.datetime || act?.tarih;
+            return dateStr && getLocalDateStr(dateStr) === targetDateStr;
+          })
+          .reduce((sum, act) => sum + (Number(act?.hesaplananKarbon ?? act?.kg ?? act?.karbonMiktari) || 0), 0);
+      }
+
+      result.push({
+        day: displayLabel,
+        actual: Number(daySum.toFixed(1)),
+        predicted: dailyPredicted,
+      });
+    }
+
+    // Eğer activities boşsa ve summary.haftalikTrend varsa fallback olarak kullan
+    const hasAnyRealActivity = result.some(r => r.actual > 0);
+    if (!hasAnyRealActivity && timeRange === '7d' && Array.isArray(summary?.haftalikTrend) && summary.haftalikTrend.length > 0) {
+      return summary.haftalikTrend.map(item => ({
+        day: `${item?.gun || ''} ${item?.tarih || ''}`.trim() || 'Gün',
+        actual: Number((item?.miktar || 0).toFixed(1)),
+        predicted: dailyPredicted,
+      }));
+    }
+
+    return result;
+  }, [summary, activities, dailyPredicted, timeRange]);
+
+  // Anormallik tespiti: Model beklentisinin %35 üzerinde ve 4kg üzeri olan gün
+  const anomalyItem = useMemo(() => {
+    return chartData.find(d => d.actual > dailyPredicted * 1.35 && d.actual > 4.0) || null;
+  }, [chartData, dailyPredicted]);
+
+  const anomalyDay = anomalyItem?.day || null;
 
   function handleChartClick(data) {
-    if (data?.activeLabel === ANOMALY_DAY) {
+    if (data?.activeLabel === anomalyDay && anomalyDay) {
       setPanelOpen(true);
     }
   }
@@ -221,7 +251,9 @@ export default function DetailedPredictionChart() {
             Gerçekleşen vs. TabNet Tahmini — Günlük Emisyon (kg CO₂e)
           </h3>
           <p className="text-xs mt-1" style={{ color: '#4B6E5E' }}>
-            Anormallik çizgisine (G9) tıklayarak sapma detaylarını ve müdahale önerisini görüntüleyin.
+            {anomalyDay 
+              ? `Anormallik çizgisine (${anomalyDay}) tıklayarak sapma detaylarını ve müdahale önerisini görüntüleyin.` 
+              : `TabNet modelinin günlük referans beklentisi (${dailyPredicted} kg/gün) doğrultusunda tüketim izlenmektedir.`}
           </p>
         </div>
 
@@ -284,7 +316,7 @@ export default function DetailedPredictionChart() {
       {/* ── Chart ── */}
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart
-          data={filteredData}
+          data={chartData}
           margin={{ top: 28, right: 8, left: -10, bottom: 0 }}
           onClick={handleChartClick}
           style={{ cursor: 'pointer' }}
@@ -310,12 +342,26 @@ export default function DetailedPredictionChart() {
             axisLine={false}
             tickLine={false}
             tickFormatter={v => `${v}kg`}
-            domain={[4, 14]}
+            domain={[0, 'dataMax + 2']}
           />
 
           <Tooltip
-            content={<CustomTooltip />}
+            content={<CustomTooltip anomalyDay={anomalyDay} />}
             cursor={{ stroke: '#1E3A3055', strokeWidth: 1 }}
+          />
+
+          {/* 3. TabNet Model Tahmini Referans Çizgisi: (expectedWeeklyKg / 7) */}
+          <ReferenceLine
+            y={dailyPredicted}
+            stroke="#60A5FA"
+            strokeDasharray="4 4"
+            strokeWidth={1.8}
+            label={{
+              value: `TabNet Model Tahmini (${dailyPredicted} kg/gün)`,
+              fill: '#60A5FA',
+              fontSize: 10,
+              position: 'insideTopRight',
+            }}
           />
 
           {/* Predicted line */}
@@ -340,14 +386,14 @@ export default function DetailedPredictionChart() {
             activeDot={{ r: 5, fill: '#22C55E', strokeWidth: 0 }}
           />
 
-          {/* Anomaly reference line (Sadece 30 günlük aralıkta veya aralıkta varsa görünür) */}
-          {(timeRange === '30d' || filteredData.some(d => d.day === ANOMALY_DAY)) && (
+          {/* Anomaly reference line (Varsa gösterilir) */}
+          {anomalyDay && (
             <ReferenceLine
-              x={ANOMALY_DAY}
+              x={anomalyDay}
               stroke="#F59E0B"
               strokeDasharray="4 3"
               strokeWidth={1.8}
-              label={<AnomalyLabel onClick={() => setPanelOpen(true)} />}
+              label={<AnomalyLabel onClick={() => setPanelOpen(true)} labelText={anomalyDay} />}
             />
           )}
         </ComposedChart>
@@ -363,18 +409,27 @@ export default function DetailedPredictionChart() {
           <svg width="16" height="2">
             <line x1="0" y1="1" x2="16" y2="1" stroke="#60A5FA" strokeWidth="2" strokeDasharray="4 2" />
           </svg>
-          <span className="text-xs" style={{ color: '#4B6E5E' }}>TabNet Model Tahmini</span>
+          <span className="text-xs" style={{ color: '#4B6E5E' }}>TabNet Model Tahmini ({dailyPredicted} kg/gün)</span>
         </div>
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPanelOpen(true)}>
-          <svg width="16" height="2">
-            <line x1="0" y1="1" x2="16" y2="1" stroke="#F59E0B" strokeWidth="2" strokeDasharray="4 2" />
-          </svg>
-          <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>⚠️ Anormallik (Tıklayın)</span>
-        </div>
+        {anomalyDay && (
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPanelOpen(true)}>
+            <svg width="16" height="2">
+              <line x1="0" y1="1" x2="16" y2="1" stroke="#F59E0B" strokeWidth="2" strokeDasharray="4 2" />
+            </svg>
+            <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>⚠️ Anormallik: {anomalyDay} (Tıklayın)</span>
+          </div>
+        )}
       </div>
 
       {/* ── Collapsible Anomaly Panel (Açılan bilgi penceresi) ── */}
-      {panelOpen && <AnomalyPanel onClose={() => setPanelOpen(false)} />}
+      {panelOpen && (
+        <AnomalyPanel 
+          onClose={() => setPanelOpen(false)} 
+          anomalyData={anomalyItem}
+          dailyPredicted={dailyPredicted}
+          message={aiRec?.message}
+        />
+      )}
     </div>
   );
 }

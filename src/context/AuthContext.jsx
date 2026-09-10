@@ -13,6 +13,13 @@ export function AuthProvider({ children }) {
     return null;
   });
   const [loading, setLoading] = useState(true);
+  const [latestAiRecommendation, setLatestAiRecommendation] = useState(() => {
+    const saved = localStorage.getItem('ecotrack_ai_recommendation');
+    if (saved) {
+      try { return JSON.parse(saved); } catch { return null; }
+    }
+    return null;
+  });
 
   const normalizeUser = (u) => {
     if (!u) return null;
@@ -25,8 +32,8 @@ export function AuthProvider({ children }) {
     const birincilUlasim = u.birincil_ulasim ?? u.birincilUlasim ?? u.transport ?? 'Özel Araç';
     const diyetTuru = u.diyet_turu ?? u.diyetTuru ?? u.diet ?? 'Az Etli (Flexitarian)';
     const hedeflenenKarbonLimiti = Number(u.hedeflenenKarbonLimiti ?? u.haftalik_hedef ?? 56.0);
-    const gunlukSeri = Number(u.gunlukSeri ?? u.gunluk_seri ?? (uid === 1 ? 12 : 1));
-    const ecoPuan = Number(u.ecoPuan ?? u.ecoScore ?? (uid === 1 ? 847 : 100));
+    const gunlukSeri = Number(u.currentStreak ?? u.streak ?? u.gunlukSeri ?? u.gunluk_seri ?? (uid === 1 ? 12 : 1));
+    const ecoPuan = Number(u.ecoScore ?? u.ecoPuan ?? (uid === 1 ? 847 : 100));
     const haftalikToplamKarbon = Number(u.haftalikToplamKarbon ?? u.haftalik_emisyon ?? (uid === 1 ? 34.2 : 0.0));
 
     return {
@@ -56,6 +63,7 @@ export function AuthProvider({ children }) {
       haftalik_hedef: hedeflenenKarbonLimiti,
       gunlukSeri,
       gunluk_seri: gunlukSeri,
+      currentStreak: gunlukSeri,
       streak: gunlukSeri,
       ecoPuan,
       ecoScore: ecoPuan,
@@ -129,17 +137,62 @@ export function AuthProvider({ children }) {
 
   const updateUser = (updatedData) => {
     setUser(prev => {
-      const newUser = normalizeUser({ ...(prev || {}), ...updatedData });
+      const merged = { ...(prev || {}), ...updatedData };
+      if (updatedData.ecoScore !== undefined || updatedData.ecoPuan !== undefined) {
+        const val = Number(updatedData.ecoScore ?? updatedData.ecoPuan);
+        merged.ecoScore = val;
+        merged.ecoPuan = val;
+      }
+      if (updatedData.currentStreak !== undefined || updatedData.streak !== undefined || updatedData.gunlukSeri !== undefined) {
+        const sVal = Number(updatedData.currentStreak ?? updatedData.streak ?? updatedData.gunlukSeri);
+        merged.currentStreak = sVal;
+        merged.streak = sVal;
+        merged.gunlukSeri = sVal;
+        merged.gunluk_seri = sVal;
+      }
+      const newUser = normalizeUser(merged);
       localStorage.setItem('ecotrack_user', JSON.stringify(newUser));
       return newUser;
     });
   };
 
+  const addScoreAndStreak = (pointsToAdd = 0, streakToAdd = 0) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const curScore = Number(prev.ecoScore ?? prev.ecoPuan ?? 100);
+      const curStreak = Number(prev.currentStreak ?? prev.streak ?? prev.gunlukSeri ?? 1);
+      const newScore = curScore + pointsToAdd;
+      const newStreak = curStreak + streakToAdd;
+      const updated = normalizeUser({
+        ...prev,
+        ecoScore: newScore,
+        ecoPuan: newScore,
+        currentStreak: newStreak,
+        streak: newStreak,
+        gunlukSeri: newStreak,
+        gunluk_seri: newStreak,
+      });
+      localStorage.setItem('ecotrack_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const saveAiRecommendation = (rec) => {
+    setLatestAiRecommendation(rec);
+    if (rec) {
+      localStorage.setItem('ecotrack_ai_recommendation', JSON.stringify(rec));
+    } else {
+      localStorage.removeItem('ecotrack_ai_recommendation');
+    }
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
+    setLatestAiRecommendation(null);
     localStorage.removeItem('ecotrack_token');
     localStorage.removeItem('ecotrack_user');
+    localStorage.removeItem('ecotrack_ai_recommendation');
   };
 
   const value = {
@@ -150,7 +203,11 @@ export function AuthProvider({ children }) {
     login,
     register,
     updateUser,
+    addScoreAndStreak,
     logout,
+    latestAiRecommendation,
+    saveAiRecommendation,
+    setLatestAiRecommendation: saveAiRecommendation,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

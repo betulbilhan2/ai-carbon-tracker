@@ -86,6 +86,9 @@ export default function LiveEstimatePanel({ category, formData, onSave, saving }
 
   const aiTip = AI_TIPS[category]?.(formData) ?? '';
 
+  const isZeroEmissionTransport = category === 'transport' && (formData.vehicleId === 'bike' || kg === 0);
+  const canSave = !saving && (kg > 0 || isZeroEmissionTransport);
+
   return (
     <div className="flex flex-col gap-4">
       {/* ── Live Estimate Card ── */}
@@ -119,8 +122,26 @@ export default function LiveEstimatePanel({ category, formData, onSave, saving }
           </p>
         )}
 
-        {/* Alternative comparison */}
-        {alt && (
+        {/* Zero emission success message OR Alternative comparison */}
+        {isZeroEmissionTransport ? (
+          <div
+            className="rounded-xl px-4 py-3 flex items-center gap-3 animate-fade-in"
+            style={{
+              backgroundColor: 'rgba(34,197,94,0.12)',
+              border: '1px solid rgba(34,197,94,0.3)',
+            }}
+          >
+            <span className="text-xl">🌿</span>
+            <div>
+              <p className="text-xs font-bold" style={{ color: '#22C55E' }}>
+                Sıfır Emisyonlu Ulaşım
+              </p>
+              <p className="text-[11px] mt-0.5 leading-snug" style={{ color: '#86EFAC' }}>
+                Mükemmel! Sıfır emisyonlu ulaşım tercihiyle gezegene tam destek sağladınız.
+              </p>
+            </div>
+          </div>
+        ) : alt ? (
           <div
             className="rounded-xl px-4 py-3 flex items-center justify-between"
             style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}
@@ -140,7 +161,7 @@ export default function LiveEstimatePanel({ category, formData, onSave, saving }
               −{alt.save.toFixed(1)} kg
             </span>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* ── AI Suggestion Box ── */}
@@ -163,7 +184,7 @@ export default function LiveEstimatePanel({ category, formData, onSave, saving }
             TabNet Tavsiyesi
           </p>
           <p className="text-xs leading-relaxed" style={{ color: '#4B6E5E' }}>
-            {aiTip}
+            {isZeroEmissionTransport ? 'Sıfır emisyonlu ulaşımı sürdürerek haftalık karbon kotanı koruyabilir ve yüksek Eco-Puan kazanabilirsin.' : aiTip}
           </p>
         </div>
       </div>
@@ -171,20 +192,20 @@ export default function LiveEstimatePanel({ category, formData, onSave, saving }
       {/* ── Save Button ── */}
       <button
         onClick={onSave}
-        disabled={saving || kg === 0}
+        disabled={!canSave}
         className="w-full flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all duration-200"
         style={{
           height: 52,
-          backgroundColor: saving || kg === 0 ? '#1E3A30' : '#22C55E',
-          color: saving || kg === 0 ? '#4B6E5E' : '#0A0F0D',
-          cursor: saving || kg === 0 ? 'not-allowed' : 'pointer',
-          boxShadow: saving || kg === 0 ? 'none' : '0 0 20px rgba(34,197,94,0.25)',
+          backgroundColor: !canSave ? '#1E3A30' : '#22C55E',
+          color: !canSave ? '#4B6E5E' : '#0A0F0D',
+          cursor: !canSave ? 'not-allowed' : 'pointer',
+          boxShadow: !canSave ? 'none' : '0 0 20px rgba(34,197,94,0.25)',
         }}
         onMouseEnter={e => {
-          if (!saving && kg > 0) e.currentTarget.style.backgroundColor = '#16A34A';
+          if (canSave) e.currentTarget.style.backgroundColor = '#16A34A';
         }}
         onMouseLeave={e => {
-          if (!saving && kg > 0) e.currentTarget.style.backgroundColor = '#22C55E';
+          if (canSave) e.currentTarget.style.backgroundColor = '#22C55E';
         }}
       >
         <Leaf size={16} />

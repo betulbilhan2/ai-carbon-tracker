@@ -6,31 +6,58 @@ import ClusterRadarCard         from '../components/analytics/ClusterRadarCard';
 import AnomalyAlertBanner       from '../components/analytics/AnomalyAlertBanner';
 import AiForecastCard           from '../components/analytics/AiForecastCard';
 import WhatIfSimulator          from '../components/analytics/WhatIfSimulator';
-import { getCarbonForecast }    from '../services/api';
+import { getCarbonForecast, getDashboardSummary, getRecentActivities } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function AnalyticsPage({ onNavigateCoach }) {
-  const { user } = useAuth();
+  const { user, latestAiRecommendation } = useAuth();
   const userId = user?.kullaniciId || 1;
   const [forecast, setForecast] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchForecast = useCallback(async () => {
+  // 1. latestAiRecommendation null ise güvenli varsayılan şablon ata
+  const aiData = latestAiRecommendation || {
+    actualWeeklyKg: 25.4,
+    expectedWeeklyKg: 22.0,
+    deviationScore: 3.4,
+    clusterId: 1,
+    recommendationId: 1,
+    simulatedSavingKgWeek: 3.2,
+    message: "Tahmin motoru hazırlanıyor veya profil verileri analiz ediliyor."
+  };
+
+  const fetchData = useCallback(async () => {
     try {
-      const data = await getCarbonForecast(userId);
-      if (data) {
-        setForecast(data);
+      const [forecastRes, summaryRes, activitiesRes] = await Promise.allSettled([
+        getCarbonForecast(userId),
+        getDashboardSummary(userId),
+        getRecentActivities(userId),
+      ]);
+
+      if (forecastRes.status === 'fulfilled' && forecastRes.value) {
+        setForecast(forecastRes.value);
+      }
+      if (summaryRes.status === 'fulfilled' && summaryRes.value) {
+        setSummary(summaryRes.value);
+      }
+      if (activitiesRes.status === 'fulfilled' && Array.isArray(activitiesRes.value)) {
+        setActivities(activitiesRes.value);
       }
     } catch (err) {
-      console.warn('Tahmin verisi alınırken fallback devrede:', err.message);
+      console.warn('Tahmin ve aktivite verileri alınırken fallback devrede:', err.message);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
-    fetchForecast();
-  }, [fetchForecast]);
+    fetchData();
+  }, [fetchData]);
+
+  // Model haftalık ortalaması
+  const effectiveWeekly = Number(aiData?.actualWeeklyKg ?? forecast?.haftalik_ortalama ?? 25.0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -46,35 +73,55 @@ export default function AnalyticsPage({ onNavigateCoach }) {
         </div>
         {loading ? (
           <span className="text-xs font-mono animate-pulse" style={{ color: '#86EFAC' }}>
-            📡 Model tahminleri hesaplanıyor…
+            📡 Model tahminleri ve canlı veriler senkronize ediliyor…
           </span>
         ) : (
           <span className="text-xs font-mono" style={{ color: '#14B8A6' }}>
-            ● Python AI & .NET 8 Canlı Entegrasyon
+            ● TabNet Canlı Model & .NET 8 Entegrasyonu
           </span>
         )}
       </div>
 
-      {/* ── Row 1: Yapay Zekâ Ay Sonu Projeksiyon Kartı ── */}
-      <AiForecastCard forecast={forecast} />
+      {/* ── 1. Üst Projeksiyon Kartı (aiData ile dinamik hesaplamalar) ── */}
+      <AiForecastCard 
+        forecast={forecast} 
+        latestAiRecommendation={aiData} 
+      />
 
-      {/* ── Row 2: İstatistik KPI Kartları ── */}
-      <AnalyticsKpiCards />
+      {/* ── 2. İstatistik KPI Kartları (Gerçek veriler) ── */}
+      <AnalyticsKpiCards 
+        summary={summary} 
+        latestAiRecommendation={aiData} 
+      />
 
-      {/* ── Row 3: İnteraktif Senaryo Simülatörü (What-If) ── */}
-      <WhatIfSimulator initialWeekly={forecast?.haftalik_ortalama ?? 25.0} />
+      {/* ── 3. İnteraktif Senaryo Simülatörü (What-If: simulatedSavingKgWeek * 52) ── */}
+      <WhatIfSimulator 
+        initialWeekly={effectiveWeekly} 
+        latestAiRecommendation={aiData} 
+      />
 
-      {/* ── Row 4: Detaylı TabNet & Anormallik Grafiği ── */}
-      <DetailedPredictionChart />
+      {/* ── 4. Gerçekleşen vs. TabNet Tahmini Grafiği (Gerçek aktiviteler + expectedWeeklyKg / 7) ── */}
+      <DetailedPredictionChart 
+        summary={summary} 
+        activities={activities || []} 
+        latestAiRecommendation={aiData} 
+      />
 
-      {/* ── Row 5: Stacked Bar + Küme Radar (60/40) ── */}
+      {/* ── 5. Stacked Bar + Küme Radar (60/40) ── */}
       <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 0.72fr' }}>
-        <WeeklyStackedBarChart />
-        <ClusterRadarCard />
+        <WeeklyStackedBarChart 
+          summary={summary} 
+          activities={activities || []} 
+          latestAiRecommendation={aiData} 
+        />
+        <ClusterRadarCard latestAiRecommendation={aiData} />
       </div>
 
-      {/* ── Row 6: Anormallik Bildirim Bandı ── */}
-      <AnomalyAlertBanner onNavigate={onNavigateCoach} />
+      {/* ── 6. Davranışsal Anormallik & Sapma Bildirim Bandı (Model message ve sapma skoru) ── */}
+      <AnomalyAlertBanner 
+        onNavigate={onNavigateCoach} 
+        latestAiRecommendation={aiData} 
+      />
     </div>
   );
 }

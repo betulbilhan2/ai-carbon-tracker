@@ -169,18 +169,16 @@ function backendLogToRow(item) {
     id:          actualId,
     aktivite_id: actualId,
     aktiviteId:  actualId,
-    datetime: item.aktiviteTarihi
-                ? new Date(item.aktiviteTarihi).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })
-                : '—',
-    category: item.kategoriAdi ?? '—',
-    detail:   `${item.tuketimDegeri} ${item.birimTipi}`,
-    kg:       item.hesaplananKarbon ?? 0,
+    datetime:    item.aktiviteTarihi || item.tarih || item.datetime || new Date().toISOString(),
+    category:    item.kategoriAdi ?? '—',
+    detail:      `${item.tuketimDegeri} ${item.birimTipi}`,
+    kg:          item.hesaplananKarbon ?? 0,
   };
 }
 
 // ── Ana Sayfa ─────────────────────────────────────────────────────
 export default function ActivityPage({ onActivitySaved, initialCategory = 'transport' }) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const currentUserId = user?.kullaniciId || 1;
   const [category,  setCategory]  = useState(initialCategory);
   const [formData,  setFormData]  = useState(defaultForm());
@@ -213,7 +211,8 @@ export default function ActivityPage({ onActivitySaved, initialCategory = 'trans
   // ── Kaydet: backend'e POST ────────────────────────────────────────
   const handleSave = useCallback(async () => {
     const { kg } = computeEmission(category, formData);
-    if (kg === 0) return;
+    const isZeroEmission = category === 'transport' && (formData.vehicleId === 'bike' || kg === 0);
+    if (kg === 0 && !isZeroEmission) return;
 
     const { kategoriId, tuketimDegeri } = resolveBackendPayload(category, formData);
 
@@ -240,10 +239,10 @@ export default function ActivityPage({ onActivitySaved, initialCategory = 'trans
         id:          actualId,
         aktivite_id: actualId,
         aktiviteId:  actualId,
-        datetime: new Date().toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }),
-        category: result?.kategoriAdi ?? buildDetail(category, formData),
-        detail:   buildDetail(category, formData),
-        kg:       karbonMiktari,
+        datetime:    formData.datetime ? new Date(formData.datetime).toISOString() : new Date().toISOString(),
+        category:    result?.kategoriAdi ?? buildDetail(category, formData),
+        detail:      buildDetail(category, formData),
+        kg:          karbonMiktari,
       };
 
       setLogs(prev => [newLog, ...prev]);
@@ -263,7 +262,7 @@ export default function ActivityPage({ onActivitySaved, initialCategory = 'trans
     } finally {
       setSaving(false);
     }
-  }, [category, formData, onActivitySaved]);
+  }, [category, formData, onActivitySaved, currentUserId]);
 
   // ── Aktivite Sil: backend'den sil ve state'i güncelle ───────────
   const handleDelete = useCallback(async (id) => {
@@ -289,15 +288,19 @@ export default function ActivityPage({ onActivitySaved, initialCategory = 'trans
       setTimeout(() => setToastOn(false), 3000);
 
       // Üst barda ve Dashboard'da emisyon değerini güncellemek için eksi kg gönder
-      if (targetLog && targetLog.kg) {
-        onActivitySaved?.({ kg: -targetLog.kg, category: targetLog.category });
+      if (targetLog) {
+        const deletedKg = Number(targetLog.kg || 0);
+        onActivitySaved?.({ kg: -deletedKg, category: targetLog.category, isDelete: true });
+        const currentTotal = Number(user?.haftalikToplamKarbon ?? 0);
+        const updatedTotal = Math.max(0, +(currentTotal - deletedKg).toFixed(2));
+        updateUser?.({ haftalikToplamKarbon: updatedTotal, haftalik_emisyon: updatedTotal });
       }
     } catch (err) {
       console.error("Silme hatası:", err);
       setErrorMsg(`Silme işlemi başarısız: ${err.message}`);
       setTimeout(() => setErrorMsg(''), 4000);
     }
-  }, [logs, onActivitySaved]);
+  }, [logs, onActivitySaved, user, updateUser]);
 
   return (
     <div className="flex flex-col gap-6">

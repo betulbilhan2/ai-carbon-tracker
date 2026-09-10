@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Bot, User, Leaf, Check } from 'lucide-react';
+import { X, Bot, User, Leaf, Check, Sliders } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { updateProfile } from '../../services/api';
 
@@ -17,8 +17,10 @@ export default function SettingsModal({
   weeklyLimit = 56,
   onSave,
   onClose,
+  onNavigateCarbonProfile,
 }) {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, latestAiRecommendation } = useAuth();
+  const recommendedLimit = Number(latestAiRecommendation?.expectedWeeklyKg ?? latestAiRecommendation?.expected_weekly_kg ?? 22);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [localLimit, setLocalLimit] = useState(weeklyLimit || 56);
   const [toastMsg, setToastMsg] = useState('');
@@ -261,7 +263,7 @@ export default function SettingsModal({
                   </p>
                   <p className="text-xs leading-relaxed" style={{ color: '#4B6E5E' }}>
                     Benzer profildeki kullanıcıların verilerine göre haftalık ideal eşiğiniz{' '}
-                    <span className="font-mono font-bold" style={{ color: '#14B8A6' }}>48 kg CO₂e</span>{' '}
+                    <span className="font-mono font-bold" style={{ color: '#14B8A6' }}>{recommendedLimit} kg CO₂e</span>{' '}
                     olarak önerilmektedir. Düşük limit daha güçlü davranışsal tetikleyici sağlar.
                   </p>
                 </div>
@@ -352,35 +354,41 @@ export default function SettingsModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-[#4B6E5E]">Birincil Ulaşım Türü</label>
-                <select
-                  name="birincilUlasim"
-                  value={formData.birincilUlasim}
-                  onChange={e => setFormData(prev => ({ ...prev, birincilUlasim: e.target.value }))}
-                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none cursor-pointer bg-[#182420] border border-[#1E3A30] text-[#F0FDF4] focus:border-[#22C55E]"
+              {/* Karbon Profilim Yönlendirme Kartı */}
+              <div
+                className="mt-2 rounded-2xl p-4 flex flex-col gap-3"
+                style={{
+                  backgroundColor: '#182420',
+                  border: '1px solid #1E3A30',
+                }}
+              >
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#86EFAC' }}>
+                    <Sliders size={15} color="#22C55E" />
+                    <span>Yaşam Tarzı &amp; YZ Parametreleri</span>
+                  </div>
+                  <p className="text-[11px] mt-1 leading-relaxed" style={{ color: '#4B6E5E' }}>
+                    TabNet derin öğrenme modelinin kullandığı 17 parametreli yaşam tarzı girdilerinizi (araç mesafesi, yakıt tipi, ısınma, diyet ve geri dönüşüm alışkanlıkları) Karbon Profilim sayfasından yönetebilirsiniz.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose?.();
+                    onNavigateCarbonProfile?.();
+                  }}
+                  className="rounded-xl px-4 py-2.5 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.02]"
+                  style={{
+                    backgroundColor: 'rgba(34,197,94,0.15)',
+                    border: '1px solid #22C55E',
+                    color: '#22C55E',
+                    boxShadow: '0 0 16px rgba(34,197,94,0.1)',
+                  }}
                 >
-                  <option value="Özel Araç">🚗 Özel Araç</option>
-                  <option value="Metro / Raylı">🚇 Metro / Raylı</option>
-                  <option value="Otobüs">🚌 Otobüs</option>
-                  <option value="Bisiklet">🚲 Bisiklet</option>
-                  <option value="Yürüyüş">🚶 Yürüyüş</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-[#4B6E5E]">Diyet Türü</label>
-                <select
-                  name="diyetTuru"
-                  value={formData.diyetTuru}
-                  onChange={e => setFormData(prev => ({ ...prev, diyetTuru: e.target.value }))}
-                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none cursor-pointer bg-[#182420] border border-[#1E3A30] text-[#F0FDF4] focus:border-[#22C55E]"
-                >
-                  <option value="Her Şey (Omnivore)">🥩 Her Şey (Omnivore)</option>
-                  <option value="Az Etli (Flexitarian)">🥗 Az Etli (Flexitarian)</option>
-                  <option value="Vejetaryen">🥦 Vejetaryen</option>
-                  <option value="Vegan">🌱 Vegan</option>
-                </select>
+                  <span>Yaşam Tarzı ve YZ Parametrelerini Düzenle</span>
+                  <span className="text-sm font-extrabold">→</span>
+                  <span className="font-normal opacity-75">(Karbon Profilim Sayfasına Git)</span>
+                </button>
               </div>
             </div>
           )}

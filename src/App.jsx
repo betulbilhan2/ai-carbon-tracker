@@ -6,6 +6,7 @@ import OverviewPage    from './pages/OverviewPage';
 import AnalyticsPage   from './pages/AnalyticsPage';
 import ActivityPage    from './pages/ActivityPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import CarbonProfilePage from './pages/CarbonProfilePage';
 import PlaceholderScreen from './components/common/PlaceholderScreen';
 import LoginPage       from './pages/LoginPage';
 import RegisterPage    from './pages/RegisterPage';
@@ -14,12 +15,10 @@ import { updateWeeklyTarget, getDashboardSummary } from './services/api';
 import { Settings, Leaf } from 'lucide-react';
 
 function AppContent() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, addScoreAndStreak, updateUser, isAuthenticated, loading } = useAuth();
   const [authView, setAuthView] = useState('login'); // 'login' | 'register'
 
   const [activeTab,      setActiveTab]      = useState('overview');
-  const [ecoScore,       setEcoScore]       = useState(100);
-  const [streak,         setStreak]         = useState(1);
   const [taskDone,       setTaskDone]       = useState(false);
   const [totalSavedKg,   setTotalSavedKg]   = useState(0.0);
   const [weeklyLimit,    setWeeklyLimit]    = useState(56);
@@ -28,17 +27,18 @@ function AppContent() {
   const [settingsTab,    setSettingsTab]    = useState('budget');
   const [selectedCategory, setSelectedCategory] = useState('transport');
 
+  const currentEcoScore = Number(user?.ecoScore ?? user?.ecoPuan ?? 100);
+  const currentStreak   = Number(user?.currentStreak ?? user?.streak ?? user?.gunlukSeri ?? 1);
+  const ecoScore = currentEcoScore;
+  const streak   = currentStreak;
+
   // Kullanıcı giriş yaptığında veya profil yüklendiğinde hedeflenen bütçeyi ve istatistikleri senkronize et
   useEffect(() => {
     if (user) {
       const limit = Number(user.haftalik_hedef ?? user.hedeflenenKarbonLimiti ?? 56);
-      const score = Number(user.ecoScore ?? user.ecoPuan ?? (user.kullaniciId === 1 ? 847 : 100));
-      const s = Number(user.streak ?? user.gunlukSeri ?? (user.kullaniciId === 1 ? 12 : 1));
       const used = Number(user.haftalik_emisyon ?? user.haftalikToplamKarbon ?? (user.kullaniciId === 1 ? 34.2 : 0.0));
 
       setWeeklyLimit(limit);
-      setEcoScore(score);
-      setStreak(s);
       setWeeklyUsed(used);
 
       const userId = user.kullaniciId || user.kullanici_id;
@@ -51,12 +51,6 @@ function AppContent() {
               }
               if (typeof summary.haftalikLimit === 'number') {
                 setWeeklyLimit(summary.haftalikLimit);
-              }
-              if (typeof summary.ecoPuan === 'number') {
-                setEcoScore(summary.ecoPuan);
-              }
-              if (typeof summary.gunlukSeri === 'number') {
-                setStreak(summary.gunlukSeri);
               }
               if (typeof summary.toplamTasarruf === 'number') {
                 setTotalSavedKg(summary.toplamTasarruf);
@@ -71,15 +65,26 @@ function AppContent() {
   // ── Handlers ────────────────────────────────────────────────────
   function handleTaskComplete() {
     setTaskDone(true);
-    setEcoScore(prev => prev + 50);
-    setStreak(prev => prev + 1);
+    addScoreAndStreak(50, 1);
   }
 
-  function handleActivitySaved({ kg }) {
+  function handleActivitySaved({ kg, isDelete = false }) {
+    if (isDelete) {
+      const removedKg = Math.abs(kg);
+      setWeeklyUsed(prev => Math.max(0, +(prev - removedKg).toFixed(1)));
+      setTotalSavedKg(prev => Math.max(0, +(prev - removedKg * 0.05).toFixed(1)));
+      const currentVal = Number(user?.haftalikToplamKarbon ?? weeklyUsed);
+      const newWeekly = Math.max(0, +(currentVal - removedKg).toFixed(2));
+      updateUser?.({ haftalikToplamKarbon: newWeekly, haftalik_emisyon: newWeekly });
+      return;
+    }
     const pts = Math.max(5, Math.round(10 - kg * 0.5));
-    setEcoScore(prev => prev + pts);
+    addScoreAndStreak(pts, 0);
     setTotalSavedKg(prev => +(prev + kg * 0.05).toFixed(1));
     setWeeklyUsed(prev => +(prev + kg).toFixed(1));
+    const currentVal = Number(user?.haftalikToplamKarbon ?? weeklyUsed);
+    const newWeekly = +(currentVal + kg).toFixed(2);
+    updateUser?.({ haftalikToplamKarbon: newWeekly, haftalik_emisyon: newWeekly });
   }
 
   function openSettings(tab = 'budget') {
@@ -141,8 +146,8 @@ function AppContent() {
       case 'overview':
         return (
           <OverviewPage
-            ecoScore={ecoScore}
-            streak={streak}
+            ecoScore={currentEcoScore}
+            streak={currentStreak}
             taskDone={taskDone}
             weeklyLimit={weeklyLimit}
             onTaskComplete={handleTaskComplete}
@@ -161,6 +166,14 @@ function AppContent() {
           <ActivityPage 
             onActivitySaved={handleActivitySaved} 
             initialCategory={selectedCategory} 
+          />
+        );
+      case 'carbon-profile':
+        return (
+          <CarbonProfilePage
+            onProfileSaved={(aiResult) => {
+              console.log('✅ Yeni YZ Karbon Profil Analizi alındı:', aiResult);
+            }}
           />
         );
       case 'leaderboard':
@@ -208,8 +221,8 @@ function AppContent() {
               <span>🎉</span>
               <span>
                 Harika! +50 Eco-Puan kazandın. Toplam:{' '}
-                <strong className="font-mono">{ecoScore} pts</strong> — Seri:{' '}
-                <strong>{streak} gün</strong>
+                <strong className="font-mono">{currentEcoScore} pts</strong> — Seri:{' '}
+                <strong>{currentStreak} gün</strong>
               </span>
             </div>
           )}
@@ -225,6 +238,10 @@ function AppContent() {
         weeklyLimit={weeklyLimit}
         onSave={handleSettingsSave}
         onClose={() => setIsSettingsOpen(false)}
+        onNavigateCarbonProfile={() => {
+          setIsSettingsOpen(false);
+          setActiveTab('carbon-profile');
+        }}
       />
     </div>
   );

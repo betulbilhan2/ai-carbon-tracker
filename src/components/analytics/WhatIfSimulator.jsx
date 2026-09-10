@@ -1,8 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Sliders, TreePine, Award, Zap, RefreshCw } from 'lucide-react';
 import { simulateScenario } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
-export default function WhatIfSimulator({ initialWeekly = 25.0 }) {
+export default function WhatIfSimulator({ initialWeekly = 25.0, latestAiRecommendation: propAiRec }) {
+  const { latestAiRecommendation: contextAiRec } = useAuth();
+  const aiRec = propAiRec || contextAiRec;
+
+  // Model çıktısı: simulatedSavingKgWeek
+  const simulatedSavingKgWeek = Number(aiRec?.simulatedSavingKgWeek ?? aiRec?.simulated_saving_kg_week ?? 3.2);
+  const yearlySavingKg = Number((simulatedSavingKgWeek * 52).toFixed(1));
+  const treeEquivalent = Number((yearlySavingKg / 22).toFixed(1));
+  const monthlyEcoPoints = Math.round((yearlySavingKg / 12) * 10);
+
   // Slayder State'leri
   const [carKm, setCarKm] = useState(30);
   const [metroKm, setMetroKm] = useState(20);
@@ -10,12 +20,12 @@ export default function WhatIfSimulator({ initialWeekly = 25.0 }) {
   const [energyPct, setEnergyPct] = useState(15);
 
   const [simulation, setSimulation] = useState({
-    haftalik_tasarruf_kg: 17.5,
-    aylik_tasarruf_kg: 74.9,
-    yillik_tasarruf_kg: 910.0,
-    esdeger_agac_sayisi: 41.4,
-    kazanilacak_tahmini_ecopuan: 749,
-    yeni_tahmini_emisyon: 7.5
+    haftalik_tasarruf_kg: simulatedSavingKgWeek,
+    aylik_tasarruf_kg: Number((simulatedSavingKgWeek * 4.345).toFixed(1)),
+    yillik_tasarruf_kg: yearlySavingKg,
+    esdeger_agac_sayisi: treeEquivalent,
+    kazanilacak_tahmini_ecopuan: monthlyEcoPoints,
+    yeni_tahmini_emisyon: Math.max(0, Number((initialWeekly - simulatedSavingKgWeek).toFixed(1)))
   });
 
   const [loading, setLoading] = useState(false);
@@ -192,10 +202,10 @@ export default function WhatIfSimulator({ initialWeekly = 25.0 }) {
             <div>
               <p className="text-xs font-medium" style={{ color: '#4B6E5E' }}>Yıllık Karbon Tasarrufu</p>
               <p className="font-mono text-2xl font-extrabold" style={{ color: '#22C55E' }}>
-                {simulation.yillik_tasarruf_kg} <span className="text-xs font-normal">kg CO₂e</span>
+                {yearlySavingKg} <span className="text-xs font-normal">kg CO₂e</span>
               </p>
               <p className="text-[11px] mt-0.5" style={{ color: '#86EFAC' }}>
-                Haftada {simulation.haftalik_tasarruf_kg} kg azaltım
+                Model potansiyeli: Haftada {simulatedSavingKgWeek} kg azaltım
               </p>
             </div>
             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 text-emerald-400">
@@ -215,10 +225,10 @@ export default function WhatIfSimulator({ initialWeekly = 25.0 }) {
             <div>
               <p className="text-xs font-medium" style={{ color: '#4B6E5E' }}>Doğaya Eşdeğer Katkı</p>
               <p className="font-mono text-2xl font-extrabold" style={{ color: '#14B8A6' }}>
-                {simulation.esdeger_agac_sayisi} <span className="text-xs font-normal">Ağaç / Yıl</span>
+                {treeEquivalent} <span className="text-xs font-normal">Ağaç / Yıl</span>
               </p>
               <p className="text-[11px] mt-0.5 text-teal-300">
-                Yıllık karbon yutak kapasitesi
+                (Yıllık {yearlySavingKg} kg / 22 kg karbon yutak kapasitesi)
               </p>
             </div>
             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-teal-500/10 text-teal-400">
@@ -238,10 +248,10 @@ export default function WhatIfSimulator({ initialWeekly = 25.0 }) {
             <div>
               <p className="text-xs font-medium" style={{ color: '#4B6E5E' }}>Kazanılacak Aylık Eco-Puan</p>
               <p className="font-mono text-2xl font-extrabold" style={{ color: '#F59E0B' }}>
-                +{simulation.kazanilacak_tahmini_ecopuan} <span className="text-xs font-normal">pts</span>
+                +{monthlyEcoPoints} <span className="text-xs font-normal">pts</span>
               </p>
               <p className="text-[11px] mt-0.5 text-amber-300">
-                Sıralamada yükseliş ivmesi sağlar
+                TabNet tasarruf optimizasyonu ile
               </p>
             </div>
             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-500/10 text-amber-400">

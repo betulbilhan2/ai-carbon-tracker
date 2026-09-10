@@ -23,7 +23,7 @@ function avatarColor(name) {
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 
-export default function LeaderboardTable({ scope = 'university', liveData = null }) {
+export default function LeaderboardTable({ scope = 'university', liveData = null, rows: propRows, totalCount: propTotalCount }) {
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
 
@@ -32,6 +32,7 @@ export default function LeaderboardTable({ scope = 'university', liveData = null
   const currentUserEmail = (user?.email || user?.eposta || '').trim().toLowerCase();
 
   const checkIfUser = (item) => {
+    if (item.isUser) return true;
     if (currentUserId && (item.kullaniciId === currentUserId || item.id === currentUserId)) {
       return true;
     }
@@ -45,39 +46,113 @@ export default function LeaderboardTable({ scope = 'university', liveData = null
     return false;
   };
 
-  // Eğer scope 'university' ve canlı API verisi varsa kullan,
-  // Şehir veya Türkiye geneli seçildiğinde ilgili kapsama ait zenginleştirilmiş sıralamayı göster
-  const baseRows = (scope === 'university' && liveData && liveData.length > 0)
-    ? liveData.map(item => ({
-        rank:         item.siraNo,
-        kullaniciId:  item.kullaniciId,
-        name:         item.adSoyad,
-        institution:  item.universite,
-        score:        item.ecoPuan,
-        weeklyChange: item.haftalikDegisim ?? +18,
-        badge:        item.rozetEmoji || '🌱',
-        isUser:       checkIfUser(item),
-      }))
-    : (MOCK_DATA[scope] ?? MOCK_DATA.university).map(item => ({
-        ...item,
-        isUser: checkIfUser(item),
-      }));
+  const userUniv = (user?.universite || user?.Universite || user?.university || 'Kampüsüm').trim();
+  const userDept = (user?.bolum || user?.Bolum || user?.department || '').trim();
+  const userInstitution = [userUniv, userDept].filter(Boolean).join(' · ') || userUniv;
+  const userScore = Number(user?.ecoScore ?? user?.ecoPuan ?? 510);
+  const currentUserNameClean = user?.ad_soyad || user?.adSoyad || 'Kullanıcı';
 
-  // Eğer kullanıcı listede bulunmuyorsa (farklı isimde yeni kayıtlı kullanıcı vb.), kullanıcının kendi satırını ekle
-  const hasUser = baseRows.some(r => r.isUser);
-  const rows = [...baseRows];
-  if (!hasUser && user) {
-    const userRankNum = rows.length + 1;
-    rows.push({
-      rank:         userRankNum,
-      kullaniciId:  currentUserId,
-      name:         user.ad_soyad || user.adSoyad || 'Kullanıcı',
-      institution:  [user.universite, user.bolum].filter(Boolean).join(' · ') || 'Kampüsüm',
-      score:        user.ecoScore ?? user.ecoPuan ?? 100,
-      weeklyChange: +15,
-      badge:        '🌱',
-      isUser:       true,
-    });
+  const isMatchingUniv = (inst = '') => {
+    if (!userUniv) return true;
+    const i = (inst || '').toLowerCase();
+    const u = userUniv.toLowerCase();
+    if (i.includes(u) || u.includes(i.split('·')[0].trim())) return true;
+    if ((u.includes('fırat') || u.includes('fü')) && (i.includes('fırat') || i.includes('fü'))) return true;
+    if ((u.includes('odtü') || u.includes('metu') || u.includes('orta doğu')) && (i.includes('odtü') || i.includes('metu') || i.includes('orta doğu'))) return true;
+    if ((u.includes('itü') || u.includes('itu') || u.includes('istanbul teknik')) && (i.includes('itü') || i.includes('itu') || i.includes('istanbul teknik'))) return true;
+    return false;
+  };
+
+  let rows = [];
+
+  if (Array.isArray(propRows)) {
+    rows = propRows.map((r, idx) => ({
+      ...r,
+      rank: r.rank || (idx + 1),
+      isUser: r.isUser || checkIfUser(r),
+      institution: r.institution || `${r.university || userUniv} · ${r.department || userDept}`,
+    }));
+  } else if (scope === 'university') {
+    // 1. Canlı veriden varsa SADECE bu üniversiteye ait olanları al (farklı üniversiteler ODTÜ vb. ASLA görünmez)
+    const matchingLive = Array.isArray(liveData)
+      ? liveData.filter(item => isMatchingUniv(item.universite) && !checkIfUser(item))
+      : [];
+
+    // 2. Kampüs arkadaşlarını aktif kullanıcının üniversite adıyla oluştur
+    const campusPeerTemplates = [
+      { name: 'Mehmet Demir', dept: 'Makina Müh.', score: 580, weeklyChange: +45, badge: '🏆' },
+      { name: 'Zeynep Çelik', dept: 'Çevre Müh.', score: 485, weeklyChange: +38, badge: '🔥' },
+      { name: 'Selin Arslan', dept: 'Kimya Müh.', score: 365, weeklyChange: +22, badge: '🌱' },
+      { name: 'Caner Erkin',  dept: 'Elektrik-Elektronik', score: 175, weeklyChange: -5, badge: '🌱' },
+    ];
+
+    const campusPeers = campusPeerTemplates.map((p, idx) => ({
+      id: 2000 + idx,
+      name: p.name,
+      institution: `${userUniv} · ${p.dept}`,
+      score: p.score,
+      weeklyChange: p.weeklyChange,
+      badge: p.badge,
+      isUser: false,
+    }));
+
+    // Kullanıcının kendi satırı
+    const userRowItem = {
+      id: currentUserId || 9999,
+      kullaniciId: currentUserId,
+      name: currentUserNameClean,
+      institution: userInstitution,
+      score: userScore,
+      weeklyChange: +124,
+      badge: '🌍',
+      isUser: true,
+    };
+
+    // Tüm satırları birleştir, puana göre sırala ve rank ata
+    const combined = [userRowItem, ...matchingLive, ...(matchingLive.length === 0 ? campusPeers : [])];
+    combined.sort((a, b) => (b.score || 0) - (a.score || 0));
+    rows = combined.map((r, i) => ({ ...r, rank: i + 1 }));
+  } else if (scope === 'city') {
+    const cityData = (MOCK_DATA.city || []).map(item => ({
+      ...item,
+      isUser: checkIfUser(item),
+    }));
+    const hasUser = cityData.some(r => r.isUser);
+    if (!hasUser) {
+      cityData.push({
+        id: 9999,
+        rank: 8,
+        name: currentUserNameClean,
+        institution: userInstitution,
+        score: userScore,
+        weeklyChange: +124,
+        badge: '🌍',
+        isUser: true,
+      });
+    }
+    cityData.sort((a, b) => (b.score || 0) - (a.score || 0));
+    rows = cityData.map((r, i) => ({ ...r, rank: i + 1 }));
+  } else {
+    // scope === 'national' (Türkiye Geneli) -> Tüm üniversiteler ve kurumlar listelenir
+    const nationalData = (MOCK_DATA.national || []).map(item => ({
+      ...item,
+      isUser: checkIfUser(item),
+    }));
+    const hasUser = nationalData.some(r => r.isUser);
+    if (!hasUser) {
+      nationalData.push({
+        id: 9999,
+        rank: 34,
+        name: currentUserNameClean,
+        institution: userInstitution,
+        score: userScore,
+        weeklyChange: +124,
+        badge: '🌍',
+        isUser: true,
+      });
+    }
+    nationalData.sort((a, b) => (b.score || 0) - (a.score || 0));
+    rows = nationalData.map((r, i) => ({ ...r, rank: i + 1 }));
   }
 
   const top10   = rows.filter(r => !r.isUser || r.rank <= 10).slice(0, 10);
@@ -160,7 +235,7 @@ export default function LeaderboardTable({ scope = 'university', liveData = null
         {/* Score */}
         <td className="px-5 py-3.5">
           <span className="font-mono font-bold text-sm" style={{ color: '#14B8A6' }}>
-            {row.score.toLocaleString('tr-TR')}
+            {(row.score ?? 0).toLocaleString('tr-TR')}
           </span>
           <span className="text-xs ml-1" style={{ color: '#4B6E5E' }}>pts</span>
         </td>
@@ -196,14 +271,18 @@ export default function LeaderboardTable({ scope = 'university', liveData = null
             En Yüksek Etki Puanına Sahip Kullanıcılar
           </h3>
           <p className="text-xs mt-0.5" style={{ color: '#4B6E5E' }}>
-            {scope === 'university' && liveData ? '● Supabase canlı sıralama verisi' : '● Kapsam Bazlı Sıralama Verisi'}
+            {scope === 'university'
+              ? '● Fırat Üniversitesi Kampüs Sıralaması'
+              : scope === 'city'
+              ? '● Elazığ Şehir Geneli Sıralaması'
+              : '● Türkiye Geneli Üniversiteler Sıralaması'}
           </p>
         </div>
         <span
           className="text-xs rounded-full px-3 py-0.5 font-mono"
           style={{ backgroundColor: '#182420', color: '#4B6E5E', border: '1px solid #1E3A30' }}
         >
-          {scope === 'university' && liveData ? `${rows.length} Kullanıcı` : `${rows.length} Kullanıcı Listelendi`}
+          {`${rows.length} Kullanıcı Listelendi`}
         </span>
       </div>
 

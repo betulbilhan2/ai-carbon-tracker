@@ -1,22 +1,36 @@
 import { Bot, TrendingUp, TrendingDown, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-export default function AiForecastCard({ forecast }) {
-  if (!forecast) return null;
+export default function AiForecastCard({ forecast, latestAiRecommendation: propAiRec }) {
+  const { latestAiRecommendation: contextAiRec } = useAuth();
+  const aiRec = propAiRec || contextAiRec;
 
-  // Bütçe aşımı kontrolü (Fark 0'dan büyükse bütçe aşılır, küçükse bütçe içi kalınır)
-  const isOverLimit = forecast.limit_asimi_bekleniyor_mu || (forecast.fark_kg > 0);
-  const confidencePct = Math.round((forecast.guven_skoru || 0.91) * 100);
+  // Model çıktılarından veya fallback'ten değerleri çek
+  const expectedWeeklyKg = Number(aiRec?.expectedWeeklyKg ?? aiRec?.expected_weekly_kg ?? 22.0);
+  const actualWeeklyKg = Number(aiRec?.actualWeeklyKg ?? aiRec?.actual_weekly_kg ?? 25.4);
+  const deviationScore = Number(aiRec?.deviationScore ?? aiRec?.deviation_score ?? 0.154);
 
-  // Trend metni belirleme (bütçe altındaysa kesinlikle yeşil pozitif metin göster)
-  const trendText = isOverLimit 
-    ? (forecast.trend_durumu?.includes('Artış') ? forecast.trend_durumu : 'Hafif Artış Eğiliminde ↗')
-    : (forecast.trend_durumu?.includes('Kararlı') || forecast.trend_durumu?.includes('Düşüş') 
-        ? forecast.trend_durumu 
-        : 'Bütçe İçi Kararlı ✓');
+  // 1. Aylık Bütçe Hedefi: (latestAiRecommendation.expectedWeeklyKg * 4.345) kg CO2e
+  const monthlyBudget = Number((expectedWeeklyKg * 4.345).toFixed(1));
 
-  const diffText = forecast.fark_kg > 0 
-    ? `+${forecast.fark_kg} kg aşım` 
-    : `${Math.abs(forecast.fark_kg)} kg tasarruf`;
+  // 2. Tahmini Ay Sonu Toplam: (latestAiRecommendation.actualWeeklyKg * 4.345) kg CO2e
+  const monthlyEstimate = Number((actualWeeklyKg * 4.345).toFixed(1));
+
+  // 3. Öngörülen Bütçe Durumu: Doğrudan ekrandaki iki değerin farkı (monthlyEstimate - monthlyBudget)
+  const diffKg = Number((monthlyEstimate - monthlyBudget).toFixed(1));
+  const isOverLimit = diffKg > 0;
+
+  const diffText = isOverLimit
+    ? `+${diffKg} kg aşım`
+    : `${Math.abs(diffKg)} kg tasarruf`;
+
+  const trendText = isOverLimit ? 'Hafif Artış Eğiliminde ↗' : 'Bütçe İçi Kararlı ✓';
+  const confidencePct = Math.round((forecast?.guven_skoru || 0.94) * 100);
+
+  // 4. Açıklama metnini modelden gelen dinamik "message" içeriğine göre güncelle
+  const modelMessage = aiRec?.message || (isOverLimit
+    ? `Mevcut tüketim hızıyla ay sonu hedef limiti ${diffKg} kg aşabilirsiniz. Yaşam tarzı optimizasyonu ve toplu taşıma tercihleriyle dengeleyebilirsiniz.`
+    : `Harika bir performans! TabNet modelinin projeksiyonuna göre ay sonunda karbon bütçenizin ${Math.abs(diffKg)} kg altında kalarak yeşil hedefi başarıyla tamamlayacaksınız.`);
 
   return (
     <div
@@ -27,13 +41,13 @@ export default function AiForecastCard({ forecast }) {
         background: 'linear-gradient(135deg, #111816 0%, #13241d 100%)',
       }}
     >
-      {/* Background soft glow */}
+      {/* Arka plan ışık efekti */}
       <div 
         className="absolute -top-12 -right-12 w-48 h-40 rounded-full blur-3xl pointer-events-none opacity-25 transition-all"
         style={{ backgroundColor: isOverLimit ? '#F59E0B' : '#22C55E' }}
       />
 
-      {/* Header */}
+      {/* Üst Bilgi */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <div
@@ -46,13 +60,13 @@ export default function AiForecastCard({ forecast }) {
             <h3 className="text-sm font-bold" style={{ color: '#F0FDF4' }}>
               Yapay Zekâ Ay Sonu Karbon Projeksiyonu
             </h3>
-            <p className="text-xs font-mono" style={{ color: '#4B6E5E' }}>
-              {forecast.model_tipi || 'TabNet Regresyon v1.0'}
+            <p className="text-xs font-mono font-medium" style={{ color: '#22C55E' }}>
+              TabNet Canlı Model
             </p>
           </div>
         </div>
 
-        {/* Model Accuracy Badge */}
+        {/* Model Doğruluk Rozeti */}
         <div
           className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
           style={{
@@ -66,31 +80,31 @@ export default function AiForecastCard({ forecast }) {
         </div>
       </div>
 
-      {/* Main Metric Numbers */}
+      {/* 4 Ana Metrik Kartı */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 my-2">
-        {/* Metric 1 */}
+        {/* Metrik 1: Tahmini Ay Sonu Toplam */}
         <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#0D1410', border: '1px solid #1E3A30' }}>
           <p className="text-xs font-medium mb-1" style={{ color: '#4B6E5E' }}>Tahmini Ay Sonu Toplam</p>
           <p className="font-mono text-2xl font-extrabold" style={{ color: isOverLimit ? '#F59E0B' : '#22C55E' }}>
-            {forecast.tahmini_aylik_emisyon} <span className="text-xs font-normal text-zinc-400">kg CO₂e</span>
+            {monthlyEstimate} <span className="text-xs font-normal text-zinc-400">kg CO₂e</span>
           </p>
           <p className="text-[10px] mt-0.5 text-zinc-500">
-            Günlük ortalama ~{(forecast.tahmini_aylik_emisyon / 30).toFixed(1)} kg baz alındı
+            Haftalık ~{actualWeeklyKg.toFixed(1)} kg tüketim baz alındı
           </p>
         </div>
 
-        {/* Metric 2 */}
+        {/* Metrik 2: Aylık Bütçe Hedefi */}
         <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#0D1410', border: '1px solid #1E3A30' }}>
           <p className="text-xs font-medium mb-1" style={{ color: '#4B6E5E' }}>Aylık Bütçe Hedefi</p>
           <p className="font-mono text-2xl font-extrabold" style={{ color: '#60A5FA' }}>
-            {forecast.hedef_aylik_limit} <span className="text-xs font-normal text-zinc-400">kg CO₂e</span>
+            {monthlyBudget} <span className="text-xs font-normal text-zinc-400">kg CO₂e</span>
           </p>
           <p className="text-[10px] mt-0.5 text-zinc-500">
-            Haftalık {forecast.haftalik_ortalama ? Math.round(forecast.hedef_aylik_limit / 4.28) : 56} kg hedef kotası
+            Haftalık {expectedWeeklyKg.toFixed(1)} kg TabNet hedef kotası
           </p>
         </div>
 
-        {/* Metric 3 */}
+        {/* Metrik 3: Öngörülen Bütçe Durumu */}
         <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#0D1410', border: '1px solid #1E3A30' }}>
           <p className="text-xs font-medium mb-1" style={{ color: '#4B6E5E' }}>Öngörülen Bütçe Durumu</p>
           <p className="font-mono text-xl font-extrabold" style={{ color: isOverLimit ? '#EF4444' : '#22C55E' }}>
@@ -101,7 +115,7 @@ export default function AiForecastCard({ forecast }) {
           </p>
         </div>
 
-        {/* Metric 4 */}
+        {/* Metrik 4: Trend Yönü */}
         <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#0D1410', border: '1px solid #1E3A30' }}>
           <p className="text-xs font-medium mb-1" style={{ color: '#4B6E5E' }}>Trend Yönü</p>
           <div className="flex items-center gap-1.5 mt-1">
@@ -123,13 +137,18 @@ export default function AiForecastCard({ forecast }) {
         </div>
       </div>
 
-      {/* AI Recommendation Message */}
-      <div className="mt-3 text-xs leading-relaxed flex items-center gap-2" style={{ color: isOverLimit ? '#F59E0B' : '#86EFAC' }}>
-        {isOverLimit ? <Sparkles size={14} className="shrink-0" /> : <CheckCircle2 size={14} className="shrink-0" />}
-        <span>
-          {isOverLimit 
-            ? `Mevcut tüketim hızıyla ay sonu hedef limiti ${forecast.fark_kg} kg aşabilirsiniz. Aşağıdaki senaryo simülatörünü kullanarak tasarruf hedefleri belirleyin.`
-            : `Harika bir performans! TabNet modelinin projeksiyonuna göre ay sonunda karbon bütçenizin ${Math.abs(forecast.fark_kg)} kg altında kalarak yeşil hedefi başarıyla tamamlayacaksınız.`}
+      {/* YZ Dinamik Öneri Mesajı */}
+      <div 
+        className="mt-3 text-xs leading-relaxed flex items-start gap-2.5 p-3 rounded-xl bg-black/30 border border-[#1E3A30]" 
+        style={{ color: isOverLimit ? '#FDE68A' : '#86EFAC' }}
+      >
+        {isOverLimit ? (
+          <Sparkles size={16} className="shrink-0 text-amber-400 mt-0.5" />
+        ) : (
+          <CheckCircle2 size={16} className="shrink-0 text-emerald-400 mt-0.5" />
+        )}
+        <span className="italic leading-normal">
+          "{modelMessage}"
         </span>
       </div>
     </div>

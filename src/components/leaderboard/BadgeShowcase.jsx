@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Lock, Award } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-const BADGES = [
+const INITIAL_BADGES = [
   {
     id: 'first_step',
     emoji: '🌱',
@@ -66,7 +67,7 @@ function BadgeCard({ badge, onSelect }) {
   const isProgress = status === 'progress';
   const isLocked   = status === 'locked';
 
-  const pct = isProgress && progress ? Math.round((progress.current / progress.total) * 100) : 0;
+  const pct = isProgress && progress ? Math.min(100, Math.round(((progress.current || 4) / 14) * 100)) : 0;
 
   return (
     <div
@@ -127,7 +128,7 @@ function BadgeCard({ badge, onSelect }) {
       {isProgress && progress && (
         <div>
           <div className="flex justify-between text-xs mb-1.5" style={{ color: '#4B6E5E' }}>
-            <span>{progress.current} / {progress.total} Gün</span>
+            <span>{progress.current || 4} / 14 Gün</span>
             <span style={{ color: '#F59E0B' }}>{pct}%</span>
           </div>
           <div
@@ -158,9 +159,27 @@ function BadgeCard({ badge, onSelect }) {
 }
 
 export default function BadgeShowcase() {
+  const { user } = useAuth();
   const [selectedToast, setSelectedToast] = useState(null);
-  const earned = BADGES.filter(b => b.status === 'earned').length;
-  const total  = BADGES.length;
+
+  const streakVal = Number(user?.currentStreak || user?.streak || user?.gunlukSeri || 4);
+
+  const badges = useMemo(() => {
+    return INITIAL_BADGES.map(b => {
+      if (b.id === 'streak_14') {
+        const isComplete = streakVal >= 14;
+        return {
+          ...b,
+          status: isComplete ? 'earned' : 'progress',
+          progress: { current: streakVal, total: 14 },
+        };
+      }
+      return b;
+    });
+  }, [streakVal]);
+
+  const earned = badges.filter(b => b.status === 'earned').length;
+  const total  = badges.length;
 
   const handleBadgeClick = (badge) => {
     setSelectedToast(badge);
@@ -224,7 +243,7 @@ export default function BadgeShowcase() {
 
       {/* Badge grid */}
       <div className="p-5 grid grid-cols-2 gap-3">
-        {BADGES.map(b => (
+        {badges.map(b => (
           <BadgeCard key={b.id} badge={b} onSelect={handleBadgeClick} />
         ))}
       </div>

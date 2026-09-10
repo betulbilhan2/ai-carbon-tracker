@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Leaf, Search, Bell, Settings, ChevronRight, X, LogOut, User as UserIcon } from 'lucide-react';
+import { Leaf, Search, Bell, Settings, ChevronRight, X, LogOut, User as UserIcon, Sliders } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const NAV_TABS = [
-  { id: 'overview',    label: 'Ana Sayfa'           },
-  { id: 'analytics',  label: 'Tahminsel Analizler'  },
-  { id: 'activity',   label: 'Aktivite Ekle'        },
-  { id: 'leaderboard',label: 'Liderlik Tablosu'     },
+  { id: 'overview',       label: 'Ana Sayfa'          },
+  { id: 'analytics',      label: 'Tahminsel Analizler'},
+  { id: 'activity',       label: 'Aktivite Ekle'       },
+  { id: 'carbon-profile', label: 'Karbon Profilim', icon: Sliders },
+  { id: 'leaderboard',    label: 'Liderlik Tablosu'    },
 ];
 
 export default function Navbar({
@@ -106,13 +107,13 @@ export default function Navbar({
 
         {/* Nav tabs */}
         <nav className="flex items-center gap-1">
-          {NAV_TABS.map(({ id, label }) => {
+          {NAV_TABS.map(({ id, label, icon: TabIcon }) => {
             const isActive = activeTab === id;
             return (
               <button
                 key={id}
                 onClick={() => onTabChange(id)}
-                className="rounded-lg text-sm transition-all duration-150"
+                className="flex items-center gap-1.5 rounded-lg text-sm transition-all duration-150"
                 style={{
                   padding: '6px 14px',
                   backgroundColor: isActive ? 'rgba(34,197,94,0.12)' : 'transparent',
@@ -133,7 +134,8 @@ export default function Navbar({
                   }
                 }}
               >
-                {label}
+                {TabIcon && <TabIcon size={14} className={isActive ? 'text-emerald-400' : 'text-[#71717A]'} />}
+                <span>{label}</span>
               </button>
             );
           })}
@@ -261,31 +263,59 @@ export default function Navbar({
               </div>
 
               <div className="space-y-2.5">
-                {/* Notification 1 */}
-                <div className="p-2.5 rounded-xl transition-colors" style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}>
-                  <div className="flex items-start gap-2">
-                    <span className="text-base">🎯</span>
-                    <div>
-                      <p className="text-xs font-semibold text-zinc-200">Haftalık Bütçe Durumu</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: '#4B6E5E' }}>
-                        Hedefine yaklaşmaktasın: Kotanın %31'ini kullandın.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                {/* Notification 1: Bütçe Durumu */}
+                {(() => {
+                  const weeklyActual = effectiveUsed || 0;
+                  const usagePercent = Math.round((weeklyActual / (effectiveLimit || 1)) * 100);
+                  const isBudgetExceeded = usagePercent > 100;
+                  const exceedPercent = usagePercent - 100;
+                  const userStreak = user?.currentStreak ?? user?.streak ?? user?.gunlukSeri ?? 12;
 
-                {/* Notification 2 */}
-                <div className="p-2.5 rounded-xl transition-colors" style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}>
-                  <div className="flex items-start gap-2">
-                    <span className="text-base">🔥</span>
-                    <div>
-                      <p className="text-xs font-semibold text-zinc-200">Rozet Başarısı</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: '#4B6E5E' }}>
-                        Harika seri! '14 Günlük Seri' rozetini başarıyla koruyorsun!
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  return (
+                    <>
+                      <div
+                        className="p-2.5 rounded-xl transition-colors"
+                        style={{
+                          backgroundColor: isBudgetExceeded ? 'rgba(239,68,68,0.08)' : '#182420',
+                          border: isBudgetExceeded ? '1px solid rgba(239,68,68,0.3)' : '1px solid #1E3A30',
+                        }}
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="text-base">{isBudgetExceeded ? '⚠️' : '🎯'}</span>
+                          <div>
+                            <p
+                              className="text-xs font-semibold"
+                              style={{ color: isBudgetExceeded ? '#EF4444' : '#F4F4F5' }}
+                            >
+                              {isBudgetExceeded ? 'Haftalık Bütçe Aşımı Uyarısı' : 'Haftalık Bütçe Durumu'}
+                            </p>
+                            <p
+                              className="text-[11px] mt-0.5 leading-relaxed"
+                              style={{ color: isBudgetExceeded ? '#FCA5A5' : '#4B6E5E' }}
+                            >
+                              {isBudgetExceeded
+                                ? `Haftalık karbon kotanızı %${exceedPercent} aştınız! Tasarruf önerilerini inceleyin.`
+                                : `Haftalık karbon kotanızın %${usagePercent}'ini kullandınız. ${usagePercent < 70 ? 'Hedefin altında dengeli ilerliyorsun.' : 'Kotana yaklaşıyorsun, tasarrufa dikkat!'}`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Notification 2: Seri Rozeti */}
+                      <div className="p-2.5 rounded-xl transition-colors" style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}>
+                        <div className="flex items-start gap-2">
+                          <span className="text-base">🔥</span>
+                          <div>
+                            <p className="text-xs font-semibold text-zinc-200">Rozet &amp; Seri Başarısı</p>
+                            <p className="text-[11px] mt-0.5" style={{ color: '#4B6E5E' }}>
+                              Harika! '{userStreak} Günlük Seri' rozetini aktif koruyorsun!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
 
                 {/* Notification 3 */}
                 <div className="p-2.5 rounded-xl transition-colors" style={{ backgroundColor: '#182420', border: '1px solid #1E3A30' }}>

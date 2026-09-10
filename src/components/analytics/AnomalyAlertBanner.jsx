@@ -1,9 +1,18 @@
-import { AlertTriangle, ArrowRight } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Sparkles } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-export default function AnomalyAlertBanner({ onNavigate }) {
+export default function AnomalyAlertBanner({ onNavigate, latestAiRecommendation: propAiRec }) {
+  const { latestAiRecommendation: contextAiRec } = useAuth();
+  const aiRec = propAiRec || contextAiRec;
+
+  // Modelden gelen gerçek sapma skoru ve mesaj
+  const deviationScore = Number(aiRec?.deviationScore ?? aiRec?.deviation_score ?? 0.154);
+  const deviationPct = Math.max(1, Math.round(Math.abs(deviationScore) * 100));
+  const message = aiRec?.message || 'Tüketim verileriniz doğrultusunda TabNet modeli tarafından kişiselleştirilmiş müdahale önerisi oluşturuldu.';
+
   return (
     <div
-      className="rounded-2xl flex items-start justify-between gap-5 p-5"
+      className="rounded-2xl flex flex-col sm:flex-row items-start justify-between gap-5 p-5"
       style={{
         backgroundColor: '#111816',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px #1E3A30',
@@ -20,36 +29,40 @@ export default function AnomalyAlertBanner({ onNavigate }) {
 
       {/* Content */}
       <div className="flex-1">
-        <p className="text-sm font-semibold mb-1.5" style={{ color: '#F59E0B' }}>
-          ⚠️ Davranışsal Anormallik Tespit Edildi (TabNet Inference)
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          <p className="text-sm font-semibold" style={{ color: '#F59E0B' }}>
+            Davranışsal Anormallik & Sapma Tespiti (TabNet Inference)
+          </p>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300">
+            Sapma: %{deviationPct}
+          </span>
+        </div>
+
+        <p className="text-xs leading-relaxed text-[#A7F3D0]">
+          Yaşam tarzı ve emisyon girdiğiniz veriler referans model kümesinin{' '}
+          <strong style={{ color: '#F59E0B' }}>%{deviationPct} sapma aralığında</strong> olduğunu göstermektedir.
         </p>
-        <p className="text-xs leading-relaxed" style={{ color: '#4B6E5E' }}>
-          Tek kullanımlık plastik tüketiminiz haftalık ortalamanın{' '}
-          <strong style={{ color: '#F59E0B' }}>%47 üzerinde</strong>.
-          TabNet modeli bu davranışı bir müdahale noktası olarak işaretledi.
-          Kişiselleştirilmiş müdahale öneriniz hazır.
-        </p>
+
+        {/* Modelden gelen gerçek dinamik mesaj */}
+        <div className="mt-2 p-3 rounded-xl bg-[#0A0F0D] border border-[#1E3A30] text-xs text-zinc-200 leading-relaxed italic flex items-start gap-2">
+          <Sparkles size={14} className="text-amber-400 shrink-0 mt-0.5" />
+          <span>"{message}"</span>
+        </div>
       </div>
 
       {/* CTA Button */}
       <button
         type="button"
-        onClick={() => onNavigate?.('waste')}
-        className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold shrink-0 self-center transition-all duration-200 cursor-pointer"
+        onClick={() => onNavigate?.('activity')}
+        className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold shrink-0 self-center transition-all duration-200 cursor-pointer hover:bg-emerald-500/10"
         style={{
           backgroundColor: 'transparent',
-          border: '1px solid #F59E0B',
-          color: '#F59E0B',
+          border: '1px solid #22C55E',
+          color: '#22C55E',
         }}
-        onMouseEnter={e => {
-          e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.12)';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.backgroundColor = 'transparent';
-        }}
-        title="Plastik tüketimini dengelemek için Sıfır Atık aktivitesi ekle"
+        title="Dengeleyici aktivite kaydet"
       >
-        <span>Müdahale Et / Sıfır Atık Ekle</span>
+        <span>Müdahale Et / Aktivite Ekle</span>
         <ArrowRight size={13} />
       </button>
     </div>

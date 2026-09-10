@@ -52,7 +52,9 @@ export async function createActivity(data) {
       kullaniciId:    data.kullaniciId    ?? 1,
       kategoriId:     data.kategoriId,
       tuketimDegeri:  data.tuketimDegeri,
-      aktiviteTarihi: data.aktiviteTarihi ?? new Date().toISOString(),
+      aktiviteTarihi: data.aktiviteTarihi
+        ? (data.aktiviteTarihi.includes('T') ? data.aktiviteTarihi : new Date(data.aktiviteTarihi).toISOString())
+        : new Date().toISOString(),
       not:            data.not            ?? null,
     }),
   });
@@ -153,6 +155,17 @@ export async function simulateScenario(scenarioData) {
       kirmizi_et_azaltma:      Number(scenarioData.kirmiziEtAzaltma ?? 0),
       enerji_tasarrufu_yuzde:  Number(scenarioData.enerjiTasarrufuYuzde ?? 0),
     }),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// YZ Öneri & Karbon Profili Analizi
+// POST /api/Analytics/recommendation
+// ─────────────────────────────────────────────────────────────────
+export async function getAiRecommendation(profileData) {
+  return apiFetch('/Analytics/recommendation', {
+    method: 'POST',
+    body: JSON.stringify(profileData),
   });
 }
 
