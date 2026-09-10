@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Excalibur\\Desktop\\ai-carbon-tracker my\\EcoTrack.API\\EcoTrack.API.csproj": {}
+    "C:\\Users\\Excalibur\\OneDrive\\Belgeler\\GitHub\\ai-carbon-tracker\\EcoTrack.API\\EcoTrack.API.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Excalibur\\Desktop\\ai-carbon-tracker my\\EcoTrack.API\\EcoTrack.API.csproj": {
+    "C:\\Users\\Excalibur\\OneDrive\\Belgeler\\GitHub\\ai-carbon-tracker\\EcoTrack.API\\EcoTrack.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Excalibur\\Desktop\\ai-carbon-tracker my\\EcoTrack.API\\EcoTrack.API.csproj",
+        "projectUniqueName": "C:\\Users\\Excalibur\\OneDrive\\Belgeler\\GitHub\\ai-carbon-tracker\\EcoTrack.API\\EcoTrack.API.csproj",
         "projectName": "EcoTrack.API",
-        "projectPath": "C:\\Users\\Excalibur\\Desktop\\ai-carbon-tracker my\\EcoTrack.API\\EcoTrack.API.csproj",
+        "projectPath": "C:\\Users\\Excalibur\\OneDrive\\Belgeler\\GitHub\\ai-carbon-tracker\\EcoTrack.API\\EcoTrack.API.csproj",
         "packagesPath": "C:\\Users\\Excalibur\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Excalibur\\Desktop\\ai-carbon-tracker my\\EcoTrack.API\\obj\\",
+        "outputPath": "C:\\Users\\Excalibur\\OneDrive\\Belgeler\\GitHub\\ai-carbon-tracker\\EcoTrack.API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\DevExpress 24.1\\Components\\Offline Packages"

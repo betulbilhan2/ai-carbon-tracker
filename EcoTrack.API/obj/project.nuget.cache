@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "L/Lzi5B153w=",
+  "dgSpecHash": "NGUjTW0vUcI=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Excalibur\\Desktop\\ai-carbon-tracker my\\EcoTrack.API\\EcoTrack.API.csproj",
+  "projectFilePath": "C:\\Users\\Excalibur\\OneDrive\\Belgeler\\GitHub\\ai-carbon-tracker\\EcoTrack.API\\EcoTrack.API.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Excalibur\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Excalibur\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\8.0.13\\microsoft.aspnetcore.authentication.jwtbearer.8.0.13.nupkg.sha512",
