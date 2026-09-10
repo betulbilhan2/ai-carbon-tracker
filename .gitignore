@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python önbellekleri
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# .NET derleme ve geçici klasörleri
+bin/
+obj/
+*.user
+*.suo
+.vs/
+EcoTrack.API/bin/
+EcoTrack.API/obj/
+EcoTrack.API/.vs/
