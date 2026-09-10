@@ -156,6 +156,77 @@ public class AnalyticsController : ControllerBase
             YeniTahminiEmisyon = yeniEmisyon
         });
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // POST /api/Analytics/recommendation
+    // ═══════════════════════════════════════════════════════════════
+    /// <summary>
+    /// Kullanıcı profiline dayalı YZ önerisi alır. Render'daki Python FastAPI servisi çağrılır.
+    /// Servis yanıt vermezse yerel fallback döner.
+    /// </summary>
+    [HttpPost("recommendation")]
+    [ProducesResponseType(typeof(RecommendationResultDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RecommendationResultDto>> GetRecommendation([FromBody] RecAiRequestDto? input = null)
+    {
+        // Gelen input null ise varsayılan tipik değerler kullan
+        input ??= new RecAiRequestDto();
+
+        // 1. Render Python AI Servisine İstek At
+        try
+        {
+            var client = _httpClientFactory.CreateClient("FastApiClient");
+            var response = await client.PostAsJsonAsync("/api/v1/recommendation", input);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var aiResponse = await response.Content.ReadFromJsonAsync<RecAiResponseDto>();
+                if (aiResponse != null)
+                {
+                    // Render API'den gelen yanıtı ön yüzün anlayacağı DTO'ya eşle
+                    var result = new RecommendationResultDto
+                    {
+                        ActualWeeklyKg          = aiResponse.ActualWeeklyKg,
+                        ExpectedWeeklyKg        = aiResponse.ExpectedWeeklyKg,
+                        DeviationScore          = aiResponse.DeviationScore,
+                        ClusterId               = aiResponse.ClusterId,
+                        RecommendationId        = aiResponse.RecommendationId,
+                        SimulatedSavingKgWeek   = aiResponse.SimulatedSavingKgWeek,
+                        Message                 = aiResponse.Message,
+                        Source                  = "render-ai"
+                    };
+
+                    _logger.LogInformation(
+                        "🤖 Render AI öneri alındı. ClusterId={C}, Sapma={D}, Tasarruf={S} kg/hafta",
+                        result.ClusterId, result.DeviationScore, result.SimulatedSavingKgWeek);
+
+                    return Ok(result);
+                }
+            }
+            else
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("⚠️ Render AI /recommendation yanıt kodu: {Code}. Body: {Body}. Fallback devreye giriyor.",
+                    response.StatusCode, errorBody);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("⚠️ Render AI servisine ulaşılamadı ({Hata}). Yerel fallback öneri döndürülüyor.", ex.Message);
+        }
+
+        // 2. Güvenli Fallback — servis kapalıysa anlamlı bir lokal tahmin döndür
+        return Ok(new RecommendationResultDto
+        {
+            ActualWeeklyKg        = 25.4,
+            ExpectedWeeklyKg      = 22.0,
+            DeviationScore        = 0.154,
+            ClusterId             = 2,
+            RecommendationId      = 1001,
+            SimulatedSavingKgWeek = 3.2,
+            Message               = "Haftada 2-3 gün kırmızı et tüketimini azaltarak ve toplu taşıma kullanımını artırarak yaklaşık 3.2 kg CO₂e tasarruf sağlayabilirsin.",
+            Source                = "local-fallback"
+        });
+    }
 }
 
 // ── DTO Modelleri ────────────────────────────────────────────────
@@ -223,4 +294,129 @@ public class ScenarioResultDto
 
     [JsonPropertyName("yeni_tahmini_emisyon")]
     public double YeniTahminiEmisyon { get; set; }
+}
+
+// ── Render AI Öneri DTO'ları ─────────────────────────────────────
+/// <summary>Render Python AI servisine gönderilecek istek gövdesi.</summary>
+public class RecyclingDto
+{
+    [JsonPropertyName("paper")]
+    public bool Paper { get; set; } = true;
+
+    [JsonPropertyName("plastic")]
+    public bool Plastic { get; set; } = true;
+
+    [JsonPropertyName("glass")]
+    public bool Glass { get; set; } = false;
+
+    [JsonPropertyName("metal")]
+    public bool Metal { get; set; } = false;
+}
+
+public class RecAiRequestDto
+{
+    [JsonPropertyName("monthly_grocery_bill")]
+    public double MonthlyGroceryBill { get; set; } = 250;
+
+    [JsonPropertyName("vehicle_distance_km_month")]
+    public double VehicleDistanceKmMonth { get; set; } = 150;
+
+    [JsonPropertyName("waste_bag_weekly_count")]
+    public int WasteBagWeeklyCount { get; set; } = 3;
+
+    [JsonPropertyName("tv_pc_daily_hour")]
+    public double TvPcDailyHour { get; set; } = 4;
+
+    [JsonPropertyName("new_clothes_monthly")]
+    public int NewClothesMonthly { get; set; } = 2;
+
+    [JsonPropertyName("internet_daily_hour")]
+    public double InternetDailyHour { get; set; } = 3;
+
+    [JsonPropertyName("diet")]
+    public string Diet { get; set; } = "omnivore";
+
+    [JsonPropertyName("how_often_shower")]
+    public string HowOftenShower { get; set; } = "daily";
+
+    [JsonPropertyName("heating_energy_source")]
+    public string HeatingEnergySource { get; set; } = "natural_gas";
+
+    [JsonPropertyName("transport")]
+    public string Transport { get; set; } = "public";
+
+    [JsonPropertyName("vehicle_type")]
+    public string VehicleType { get; set; } = "petrol";
+
+    [JsonPropertyName("social_activity")]
+    public string SocialActivity { get; set; } = "sometimes";
+
+    [JsonPropertyName("frequency_of_traveling_by_air")]
+    public string FrequencyOfTravelingByAir { get; set; } = "rarely";
+
+    [JsonPropertyName("waste_bag_size")]
+    public string WasteBagSize { get; set; } = "medium";
+
+    [JsonPropertyName("energy_efficiency")]
+    public string EnergyEfficiency { get; set; } = "medium";
+
+    [JsonPropertyName("recycling")]
+    public RecyclingDto Recycling { get; set; } = new RecyclingDto();
+
+    [JsonPropertyName("cooking_with")]
+    public int CookingWith { get; set; } = 2;
+}
+
+/// <summary>Render Python AI servisinden dönen ham JSON yanıtı.</summary>
+public class RecAiResponseDto
+{
+    [JsonPropertyName("actual_weekly_kg")]
+    public double ActualWeeklyKg { get; set; }
+
+    [JsonPropertyName("expected_weekly_kg")]
+    public double ExpectedWeeklyKg { get; set; }
+
+    [JsonPropertyName("deviation_score")]
+    public double DeviationScore { get; set; }
+
+    [JsonPropertyName("cluster_id")]
+    public int ClusterId { get; set; }
+
+    [JsonPropertyName("recommendation_id")]
+    public int RecommendationId { get; set; }
+
+    [JsonPropertyName("simulated_saving_kg_week")]
+    public double SimulatedSavingKgWeek { get; set; }
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = string.Empty;
+}
+
+/// <summary>Ön yüze (React) döndürülen normalize öneri sonucu.</summary>
+public class RecommendationResultDto
+{
+    [JsonPropertyName("actualWeeklyKg")]
+    public double ActualWeeklyKg { get; set; }
+
+    [JsonPropertyName("expectedWeeklyKg")]
+    public double ExpectedWeeklyKg { get; set; }
+
+    [JsonPropertyName("deviationScore")]
+    public double DeviationScore { get; set; }
+
+    [JsonPropertyName("clusterId")]
+    public int ClusterId { get; set; }
+
+    [JsonPropertyName("recommendationId")]
+    public int RecommendationId { get; set; }
+
+    [JsonPropertyName("simulatedSavingKgWeek")]
+    public double SimulatedSavingKgWeek { get; set; }
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>"render-ai" veya "local-fallback"</summary>
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = "local-fallback";
 }

@@ -64,10 +64,11 @@ builder.Services.AddDbContext<EcoTrackDbContext>(options =>
 );
 
 // ── 2.1 FastApiClient (Python AI Mikroservisi) ─────────────────────
+var aiServiceUrl = builder.Configuration["AiServiceUrl"] ?? "https://ai-carbon-tracker-api.onrender.com";
 builder.Services.AddHttpClient("FastApiClient", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:8000");
-    client.Timeout = TimeSpan.FromSeconds(3); // Hızlı yanıt veya fallback
+    client.BaseAddress = new Uri(aiServiceUrl);
+    client.Timeout = TimeSpan.FromSeconds(30); // Render cold-start toleransı
 });
 
 // ── 3. CORS Yapılandırması ──────────────────────────────────────────
